@@ -103,10 +103,9 @@ filtering.
 - **OS-wide drag detection on Windows** — needs shell drop-source hooks; orb only.
 - **Cloud/networked conversions** — never; everything is local.
 
-## Roadmap (informed by competitor research & user requests)
+## Roadmap
 
-- **On-device transcription** (audio/video → text/SRT via whisper.cpp) —
-  Permute's most-praised differentiator; heavy but very requested.
+- **On-device transcription** (audio/video → text/SRT via whisper.cpp).
 - **Watch folders** — auto-convert anything dropped in a watched directory.
 - **RAW / PSD / JPEG XL / EXR** image inputs — needs libraw/vips extras.
 - **PDF compression** — needs bundled Ghostscript (or qpdf + re-render).

@@ -68,3 +68,9 @@ Release automatically.
 Every conversion runs on-device: bundled ffmpeg/sharp/pdfjs for media,
 Apple's own apps for iWork formats, and the Vision framework for OCR.
 There is no server, no upload, no telemetry.
+
+## Disclaimer
+
+Provided as-is, without warranty of any kind — see [LICENSE](LICENSE).
+Crucible writes and moves files on your disk; keep backups of anything
+irreplaceable.

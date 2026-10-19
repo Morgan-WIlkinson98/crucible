@@ -1,0 +1,63 @@
+direction: right
+
+title: Crucible Architecture {style.font-size: 28}
+
+app: "Crucible.app — Electron" {
+  style.stroke: "#ff6a2a"
+  style.fill: "#1a1a1e"
+  style.font-color: "#e8e8ec"
+
+  main: "Main process\n(main.js)" {
+    tray: "Tray / menu bar"
+    jobs: "Job runner + notifications"
+    ipc: "IPC dispatcher"
+    settings: "settings.json\n(userData)"
+  }
+
+  windows: "Windows" {
+    orb: "Orb — 96px transparent\nnormal level, desktop-only" {style.font-color: "#ffb37a"}
+    wheel: "Wheel — 520px overlay\nscreen-saver level, transient" {style.font-color: "#ffb37a"}
+    settingsWin: "Settings window"
+    printWin: "Hidden print window\n(printToPDF)"
+  }
+
+  engines: "Engines (src/converters)" {
+    style.font-color: "#e8e8ec"
+    image: "image.js — sharp\nheic-convert · sips"
+    av: "av.js — ffmpeg-static"
+    pdf: "pdf.js — pdfjs +\npdf-lib + @napi-rs/canvas"
+    docs2: "documents.js — mammoth\nmarked · printToPDF"
+    epub: "epub.js — jszip (EPUB 3)"
+    sheets: "spreadsheets.js — SheetJS"
+    archives: "archives.js — jszip/tar\nnode-unrar-js"
+    apple: "apple.js — osascript\ntextutil · sips 🍎" {style.font-color: "#ffb37a"}
+  }
+
+  registry: "src/shared/\nformats.js · tools.js · actions.js\nplatform-gated registry" {
+    style.stroke-dash: 4
+  }
+}
+
+agent: "crucible-agent\nSwift · macOS only" {
+  style.stroke: "#ff6a2a"
+  style.fill: "#141418"
+  style.font-color: "#ffb37a"
+  tap: "CGEventTap\ndrag detect · key taps · drop coords"
+  pb: "NSPasteboard(.drag)\nfile URLs mid-drag"
+  vision: "Vision OCR"
+  share: "NSSharingService\nAirDrop · Share sheet"
+}
+
+filesys: "User filesystem\n(all local — no network)" {
+  style.fill: "#141418"
+  style.font-color: "#9a9aa4"
+  style.stroke-dash: 4
+}
+
+app.main.jobs -> engines: "dispatch via registry"
+app.registry -> app.windows.wheel: "options for dropped files"
+agent.tap -> app.main.ipc: "JSON events (stdout)"
+app.main.ipc -> agent: "commands (stdin)"
+agent.pb -> app.main.jobs: "dragged file list"
+app.windows.printWin -> engines.docs2: "HTML -> PDF"
+engines -> filesys: "read source · write output"

@@ -91,8 +91,8 @@ function sendToWheel(channel, data) {
 function createSettings() {
   if (settingsWin) { settingsWin.focus(); return settingsWin; }
   settingsWin = new BrowserWindow({
-    width: 480, height: 620,
-    frame: false, transparent: true, resizable: false,
+    width: 480, height: 700, minHeight: 560,
+    frame: false, transparent: true, resizable: true,
     minimizable: false, maximizable: false,
     title: 'Crucible Settings',
     webPreferences: {

@@ -34,7 +34,8 @@
   #ring .fg { stroke: #ff6a2a; stroke-linecap: round;
               stroke-dasharray: 264; stroke-dashoffset: 264; transition: stroke-dashoffset .2s; }
   #label {
-    position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+    position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+    max-width: 90px; overflow: hidden; text-overflow: ellipsis;
     font-size: 9px; color: #ff9c6b; white-space: nowrap; opacity: 0; transition: opacity .3s;
   }
   #label.show { opacity: 1; }

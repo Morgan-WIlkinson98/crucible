@@ -76,5 +76,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          find artifacts -type f \( -name "*.dmg" -o -name "*.exe" \) \
-            -exec gh release upload "$GITHUB_REF_NAME" {} \;
+          # create release if absent, then upload each artifact (spaces in
+          # "Crucible Setup x.y.z.exe" need -print0/xargs -0)
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --generate-notes
+          find artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.zip" \) -print0 | \
+            xargs -0 -I{} gh release upload "$GITHUB_REF_NAME" "{}" --clobber

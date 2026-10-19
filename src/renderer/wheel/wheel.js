@@ -5,29 +5,37 @@ const tabsEl = document.getElementById('tabs');
 const formEl = document.getElementById('form');
 const toastEl = document.getElementById('toast');
 
-const CX = 260, CY = 260, R_OUT = 250, R_IN = 92;
+const CX = 260, CY = 260, SO = 225, SI = 100;  // outer/inner square half-sizes
 const WHEEL_ORDER = ['convert', 'tools', 'actions'];
 const WHEEL_NAMES = { convert: 'Convert', tools: 'Tools', actions: 'Actions' };
 const KEY_HINTS = { convert: '⇧', tools: '⌘', actions: '⌃' };
 
 let data = null;           // {files, wheels, active}
 let active = 'convert';
-let wedges = [];           // [{pick, pathEl, midAngle}]
+let wedges = [];           // [{pick, pathEl, t0, t1}]
 let hotIndex = -1;
 
-function polar(cx, cy, r, deg) {
-  const rad = (deg - 90) * Math.PI / 180;
-  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+// point on a square boundary: t in [0,1) clockwise from the top-left corner,
+// s = half-size of the square
+function squarePoint(t, s) {
+  const p = (((t % 1) + 1) % 1) * 4;
+  const e = Math.floor(p) % 4, f = p - Math.floor(p);
+  if (e === 0) return [CX - s + 2 * s * f, CY - s];   // top, L→R
+  if (e === 1) return [CX + s, CY - s + 2 * s * f];   // right, T→B
+  if (e === 2) return [CX + s - 2 * s * f, CY + s];   // bottom, R→L
+  return [CX - s, CY + s - 2 * s * f];                // left, B→T
 }
 
-function wedgePath(a0, a1, r0, r1) {
-  const [x0, y0] = polar(CX, CY, r1, a0);
-  const [x1, y1] = polar(CX, CY, r1, a1);
-  const [x2, y2] = polar(CX, CY, r0, a1);
-  const [x3, y3] = polar(CX, CY, r0, a0);
-  const large = (a1 - a0) > 180 ? 1 : 0;
-  return `M ${x0} ${y0} A ${r1} ${r1} 0 ${large} 1 ${x1} ${y1}
-          L ${x2} ${y2} A ${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`;
+function cornersBetween(t0, t1) {
+  return [0.25, 0.5, 0.75].filter((c) => c > t0 && c < t1);
+}
+
+// ring cell between inner and outer square for perimeter range [t0, t1]
+function cellPath(t0, t1) {
+  const corners = cornersBetween(t0, t1);
+  const outer = [t0, ...corners, t1].map((t) => squarePoint(t, SO));
+  const inner = [t1, ...corners.slice().reverse(), t0].map((t) => squarePoint(t, SI));
+  return 'M ' + outer.concat(inner).map((p) => p.join(' ')).join(' L ') + ' Z';
 }
 
 // word-wrap a label to fit the wedge's chord width at the label radius
@@ -61,7 +69,7 @@ function render() {
 
   if (!items.length) {
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    t.setAttribute('x', CX); t.setAttribute('y', CY + R_IN + 60);
+    t.setAttribute('x', CX); t.setAttribute('y', CY + SI + 60);
     t.setAttribute('class', 'wedge-label');
     t.textContent = 'No options for this selection';
     svg.appendChild(t);
@@ -69,22 +77,22 @@ function render() {
   }
 
   const n = items.length;
-  const gap = n > 8 ? 2 : 4;
+  const gap = n > 8 ? 0.006 : 0.012;   // perimeter-fraction gap between cells
+  const segLen = (8 * SO) / n;         // cell width along the perimeter (px)
+  const fontSize = n > 12 ? 10.5 : n > 8 ? 12 : 14;
+  const maxChars = Math.max(6, Math.floor((segLen - 34) / (fontSize * 0.6)));
   items.forEach((pick, i) => {
-    const a0 = (i * 360) / n + gap / 2;
-    const a1 = ((i + 1) * 360) / n - gap / 2;
+    const t0 = i / n, t1 = (i + 1) / n;
+    const g = Math.min(gap, (t1 - t0) * 0.2);
     const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    p.setAttribute('d', wedgePath(a0, a1, R_IN, R_OUT));
+    p.setAttribute('d', cellPath(t0 + g / 2, t1 - g / 2));
     p.setAttribute('class', 'wedge');
     svg.appendChild(p);
 
-    const mid = (a0 + a1) / 2;
-    const rMid = (R_IN + R_OUT) / 2;
-    const [lx, ly] = polar(CX, CY, rMid, mid);
-    // available label width ≈ chord across the wedge at label radius
-    const chord = 2 * rMid * Math.sin(((a1 - a0) / 2) * Math.PI / 180);
-    const fontSize = n > 12 ? 11.5 : n > 8 ? 13 : 15;
-    const maxChars = Math.max(6, Math.floor((chord - 14) / (fontSize * 0.55)));
+    const mid = (t0 + t1) / 2;
+    const [ox, oy] = squarePoint(mid, SO);
+    const [ix, iy] = squarePoint(mid, SI);
+    const lx = (ox + ix) / 2, ly = (oy + iy) / 2;
     const lines = wrapLabel(pick.label, maxChars);
     const lineH = fontSize + 4;
     const y0 = ly - ((lines.length - 1) * lineH) / 2;
@@ -92,7 +100,7 @@ function render() {
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       t.setAttribute('x', lx); t.setAttribute('y', y0 + k * lineH);
       t.setAttribute('class', 'wedge-label');
-      t.setAttribute('font-size', fontSize);
+      t.style.fontSize = `${fontSize}px`;
       t.setAttribute('dominant-baseline', 'middle');
       t.textContent = ln;
       svg.appendChild(t);
@@ -108,7 +116,7 @@ function render() {
 
     p.addEventListener('mouseenter', () => setHot(i));
     p.addEventListener('click', () => choose(pick));
-    wedges.push({ pick, pathEl: p, midAngle: mid, a0, a1 });
+    wedges.push({ pick, pathEl: p, t0, t1 });
   });
   setHot(-1);
 }
@@ -118,14 +126,19 @@ function setHot(i) {
   wedges.forEach((w, j) => w.pathEl.classList.toggle('hot', j === i));
 }
 
-// pick wedge at local coords (for dropat during global drag)
+// pick cell at local coords (for dropat during global drag)
 function wedgeAt(x, y) {
   const dx = x - CX, dy = y - CY;
-  const r = Math.hypot(dx, dy);
-  if (r < R_IN || r > R_OUT) return null;
-  let deg = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-  if (deg < 0) deg += 360;
-  return wedges.find((w) => deg >= w.a0 && deg <= w.a1) || null;
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  if (ax > SO || ay > SO) return null;          // outside outer square
+  if (ax < SI && ay < SI) return null;          // inside inner square (hub)
+  // map the point to a perimeter position on its dominant edge
+  let t;
+  if (ax >= ay) t = dx > 0 ? 0.25 + ((dy + SO) / (2 * SO)) * 0.25   // right edge
+                           : 0.75 + ((SO - dy) / (2 * SO)) * 0.25;  // left edge
+  else          t = dy > 0 ? 0.5 + ((SO - dx) / (2 * SO)) * 0.25    // bottom edge
+                           : ((dx + SO) / (2 * SO)) * 0.25;         // top edge
+  return wedges.find((w) => t >= w.t0 && t <= w.t1) || null;
 }
 
 // ---- selection ------------------------------------------------------------

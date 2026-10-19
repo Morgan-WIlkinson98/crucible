@@ -5,7 +5,7 @@ const tabsEl = document.getElementById('tabs');
 const formEl = document.getElementById('form');
 const toastEl = document.getElementById('toast');
 
-const CX = 260, CY = 260, SO = 225, SI = 100;  // outer/inner square half-sizes
+const CX = 260, CY = 260, SO = 225, RI = 100;  // outer square half-size, hub circle radius
 const WHEEL_ORDER = ['convert', 'tools', 'actions'];
 const WHEEL_NAMES = { convert: 'Convert', tools: 'Tools', actions: 'Actions' };
 const KEY_HINTS = { convert: '⇧', tools: '⌘', actions: '⌃' };
@@ -30,12 +30,20 @@ function cornersBetween(t0, t1) {
   return [0.25, 0.5, 0.75].filter((c) => c > t0 && c < t1);
 }
 
-// ring cell between inner and outer square for perimeter range [t0, t1]
+// ring cell for perimeter range [t0, t1]: square outer boundary, radial
+// sides, and a circular arc hugging the hub on the inside
 function cellPath(t0, t1) {
   const corners = cornersBetween(t0, t1);
   const outer = [t0, ...corners, t1].map((t) => squarePoint(t, SO));
-  const inner = [t1, ...corners.slice().reverse(), t0].map((t) => squarePoint(t, SI));
-  return 'M ' + outer.concat(inner).map((p) => p.join(' ')).join(' L ') + ' Z';
+  const a0 = Math.atan2(outer[0][1] - CY, outer[0][0] - CX);
+  const a1 = Math.atan2(outer[outer.length - 1][1] - CY, outer[outer.length - 1][0] - CX);
+  const i0 = [CX + RI * Math.cos(a0), CY + RI * Math.sin(a0)];
+  const i1 = [CX + RI * Math.cos(a1), CY + RI * Math.sin(a1)];
+  let span = a1 - a0;
+  while (span < 0) span += Math.PI * 2;
+  const large = span > Math.PI ? 1 : 0;
+  return 'M ' + outer.map((p) => p.join(' ')).join(' L ') +
+         ` L ${i1[0]} ${i1[1]} A ${RI} ${RI} 0 ${large} 0 ${i0[0]} ${i0[1]} Z`;
 }
 
 // word-wrap a label to fit the wedge's chord width at the label radius
@@ -69,7 +77,7 @@ function render() {
 
   if (!items.length) {
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    t.setAttribute('x', CX); t.setAttribute('y', CY + SI + 60);
+    t.setAttribute('x', CX); t.setAttribute('y', CY + RI + 60);
     t.setAttribute('class', 'wedge-label');
     t.textContent = 'No options for this selection';
     svg.appendChild(t);
@@ -91,8 +99,8 @@ function render() {
 
     const mid = (t0 + t1) / 2;
     const [ox, oy] = squarePoint(mid, SO);
-    const [ix, iy] = squarePoint(mid, SI);
-    const lx = (ox + ix) / 2, ly = (oy + iy) / 2;
+    const am = Math.atan2(oy - CY, ox - CX);
+    const lx = (ox + CX + RI * Math.cos(am)) / 2, ly = (oy + CY + RI * Math.sin(am)) / 2;
     const lines = wrapLabel(pick.label, maxChars);
     const lineH = fontSize + 4;
     const y0 = ly - ((lines.length - 1) * lineH) / 2;
@@ -114,9 +122,15 @@ function render() {
       svg.appendChild(s);
     }
 
+    // angular bounds for hit-testing (cell sides are radial)
+    const p0 = squarePoint(t0, SO), p1 = squarePoint(t1, SO);
+    const th0 = Math.atan2(p0[1] - CY, p0[0] - CX);
+    let span = Math.atan2(p1[1] - CY, p1[0] - CX) - th0;
+    while (span < 0) span += Math.PI * 2;
+
     p.addEventListener('mouseenter', () => setHot(i));
     p.addEventListener('click', () => choose(pick));
-    wedges.push({ pick, pathEl: p, t0, t1 });
+    wedges.push({ pick, pathEl: p, th0, span });
   });
   setHot(-1);
 }
@@ -129,16 +143,11 @@ function setHot(i) {
 // pick cell at local coords (for dropat during global drag)
 function wedgeAt(x, y) {
   const dx = x - CX, dy = y - CY;
-  const ax = Math.abs(dx), ay = Math.abs(dy);
-  if (ax > SO || ay > SO) return null;          // outside outer square
-  if (ax < SI && ay < SI) return null;          // inside inner square (hub)
-  // map the point to a perimeter position on its dominant edge
-  let t;
-  if (ax >= ay) t = dx > 0 ? 0.25 + ((dy + SO) / (2 * SO)) * 0.25   // right edge
-                           : 0.75 + ((SO - dy) / (2 * SO)) * 0.25;  // left edge
-  else          t = dy > 0 ? 0.5 + ((SO - dx) / (2 * SO)) * 0.25    // bottom edge
-                           : ((dx + SO) / (2 * SO)) * 0.25;         // top edge
-  return wedges.find((w) => t >= w.t0 && t <= w.t1) || null;
+  if (Math.abs(dx) > SO || Math.abs(dy) > SO) return null;   // outside outer square
+  if (Math.hypot(dx, dy) < RI) return null;                  // inside hub circle
+  const th = Math.atan2(dy, dx);
+  const TAU = Math.PI * 2;
+  return wedges.find((w) => ((th - w.th0 + TAU) % TAU) <= w.span) || null;
 }
 
 // ---- selection ------------------------------------------------------------

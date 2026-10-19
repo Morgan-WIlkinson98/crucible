@@ -125,7 +125,7 @@ async function runTool(id, paths, options = {}, ctx = {}) {
     }
 
     // ---- images ----
-    case 'img-compress': return run((p) => image.compressImage(p, opts));
+    case 'img-compress': return run((p) => image.compressImage(p, { ...opts, quality: Math.min(100, Math.max(1, Number(options.quality) || 60)) }));
     case 'img-resize':   return run((p) => image.resizeImage(p, { ...opts, scale: 0.5 }));
     case 'img-resize-w': return run((p) => image.resizeImage(p, { ...opts, width: Number(options.width) || 1024 }));
     case 'img-rotate':   return run((p) => image.rotateImage(p, { ...opts, degrees: 90 }));
@@ -143,7 +143,7 @@ async function runTool(id, paths, options = {}, ctx = {}) {
       });
 
     // ---- video/audio ----
-    case 'vid-compress': return run((p) => av.compressAV(p, opts));
+    case 'vid-compress': return run((p) => av.compressAV(p, { ...opts, crf: Math.min(51, Math.max(0, Number(options.crf) || 28)) }));
     case 'vid-trim':     return run((p) => av.trimAV(p, { ...opts, start: options.start, end: options.end }));
     case 'vid-mute':     return run((p) => av.muteVideo(p, opts));
     case 'vid-audio':    return run((p) => av.extractAudio(p, opts));

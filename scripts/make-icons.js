@@ -49,6 +49,6 @@ function drawTray(size) {
 }
 
 fs.writeFileSync(path.join(out, 'icon.png'), drawIcon(512));
-fs.writeFileSync(path.join(out, 'trayTemplate.png'), drawTray(44));
-fs.writeFileSync(path.join(out, 'trayTemplate@2x.png'), drawTray(88));
+fs.writeFileSync(path.join(out, 'trayTemplate.png'), drawTray(22));
+fs.writeFileSync(path.join(out, 'trayTemplate@2x.png'), drawTray(44));
 console.log('icons written to build/');

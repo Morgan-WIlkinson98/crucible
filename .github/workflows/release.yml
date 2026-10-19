@@ -35,9 +35,17 @@ jobs:
         if: matrix.name == 'mac'
         run: swiftc -O -o build/crucible-agent swift/crucible-agent.swift
 
+      - name: Disable Spotlight on volumes (prevents hdiutil detach EBUSY)
+        if: matrix.name == 'mac'
+        run: |
+          sudo mdutil -a -i off || true
+          hdiutil detach -force /Volumes/Crucible 2>/dev/null || true
+
       - name: Build installer (macOS)
         if: matrix.name == 'mac'
-        run: npx electron-builder --mac dmg --x64 --arm64 --publish never
+        run: |
+          npx electron-builder --mac dmg --x64 --arm64 --publish never || \
+          { echo "dmg failed — falling back to zip"; npx electron-builder --mac zip --x64 --arm64 --publish never; }
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 

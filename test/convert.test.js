@@ -188,6 +188,34 @@ async function exists(p) { assert.ok(p && fs.existsSync(p), `missing ${p}`); }
     assert.deepStrictEqual(jr.errors, []);
     assert.strictEqual(fs.statSync(jr.outputs[0]).size, fs.statSync(fixtures.mp4).size);
   });
+  await t('tool: rename-pattern', async () => {
+    const r = await runTool('rename-pattern', [fixtures.txt], { pattern: 'renamed-{n}', find: '', replace: '' });
+    assert.deepStrictEqual(r.errors, []);
+    assert.ok(path.basename(r.outputs[0]).startsWith('renamed-'));
+    fixtures.txt = r.outputs[0]; // renamed — keep fixture path fresh
+  });
+  await t('tool: strip-meta (pdf)', async () => {
+    const r = await runTool('strip-meta', [fixtures.pdf]);
+    assert.deepStrictEqual(r.errors, []);
+    const d = await PDFDocument.load(fs.readFileSync(r.outputs[0]));
+    assert.strictEqual(d.getTitle() ?? '', '');
+  });
+  await t('tool: strip-meta (video)', async () => {
+    const r = await runTool('strip-meta', [fixtures.mp4]);
+    assert.deepStrictEqual(r.errors, []);
+    await exists(r.outputs[0]);
+  });
+  await t('tool: img-annotate', async () => {
+    const r = await runTool('img-annotate', [fixtures.png], { text: 'hello crucible' });
+    assert.deepStrictEqual(r.errors, []);
+    const meta = await sharp(r.outputs[0]).metadata();
+    assert.ok(meta.width >= 64);
+  });
+  await t('tool: pdf-redact', async () => {
+    const r = await runTool('pdf-redact', [fixtures.pdf], { text: 'Hello PDF' });
+    assert.deepStrictEqual(r.errors, []);
+    await exists(r.outputs[0]);
+  });
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

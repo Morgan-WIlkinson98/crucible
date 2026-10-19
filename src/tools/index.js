@@ -84,6 +84,45 @@ async function runTool(id, paths, options = {}, ctx = {}) {
         fs.renameSync(p, dst);
         return dst;
       });
+    case 'rename-pattern': {
+      // tokens: {name} basename, {n} sequence, {date} mtime YYYY-MM-DD, {ext}
+      const pattern = options.pattern || '{name}-{n}';
+      const find = options.find || '';
+      const replace = options.replace || '';
+      const outputs = [];
+      const errors = [];
+      let n = 1;
+      for (const p of paths) {
+        try {
+          const ext = path.extname(p);
+          let stem = path.basename(p, ext);
+          if (find) stem = stem.split(find).join(replace);
+          const date = fs.statSync(p).mtime.toISOString().slice(0, 10);
+          const newName = pattern
+            .replace(/\{name\}/g, stem)
+            .replace(/\{n\}/g, String(n).padStart(2, '0'))
+            .replace(/\{date\}/g, date)
+            .replace(/\{ext\}/g, ext.slice(1));
+          const dst = path.join(path.dirname(p), newName + ext);
+          if (dst === p) { n++; continue; }
+          if (fs.existsSync(dst)) throw new Error(`"${newName}${ext}" already exists`);
+          fs.renameSync(p, dst);
+          outputs.push(dst);
+          n++;
+        } catch (e) { errors.push({ file: p, error: e.message }); }
+      }
+      return { outputs, errors };
+    }
+    case 'strip-meta': {
+      const { categoryOf } = require('../shared/formats');
+      return run((p) => {
+        const cat = categoryOf(path.extname(p).slice(1).toLowerCase());
+        if (cat === 'image') return image.stripImageMeta(p, opts);
+        if (cat === 'video' || cat === 'audio') return av.stripAVMeta(p, opts);
+        if (cat === 'pdf') return pdf.stripPdfMeta(p, opts);
+        throw new Error('Unsupported for metadata stripping');
+      });
+    }
 
     // ---- images ----
     case 'img-compress': return run((p) => image.compressImage(p, opts));
@@ -93,6 +132,7 @@ async function runTool(id, paths, options = {}, ctx = {}) {
     case 'img-flip':     return run((p) => image.flipImage(p, opts));
     case 'img-gray':     return run((p) => image.grayscaleImage(p, opts));
     case 'img-strip':    return run((p) => image.stripImageMeta(p, opts));
+    case 'img-annotate': return run((p) => image.annotateImage(p, { ...opts, text: options.text }));
     case 'img-ocr':
       if (!_helpers.ocrImage) throw new Error('OCR requires macOS Vision agent');
       return run(async (p) => {
@@ -115,6 +155,7 @@ async function runTool(id, paths, options = {}, ctx = {}) {
 
     // ---- pdf ----
     case 'pdf-merge':   return { outputs: [await pdf.mergePdfs(paths, opts)], errors: [] };
+    case 'pdf-redact':  return run((p) => pdf.redactPdf(p, { ...opts, text: options.text }));
     case 'pdf-split':   return run((p) => pdf.splitPdf(p, opts));
     case 'pdf-extract': return run((p) => pdf.extractPdfPages(p, { ...opts, range: options.range }));
     case 'pdf-rotate':  return run((p) => pdf.rotatePdf(p, opts));

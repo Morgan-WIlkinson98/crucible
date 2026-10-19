@@ -76,9 +76,12 @@ filtering.
 | Extract archive | zip tar gz rar | ✅ |
 | SHA-256 checksum | any | ✅ |
 | Split into parts / Join parts | any | ✅ |
-| Rename | any | ✅ |
-| Compress / Resize / Rotate / Flip / Grayscale / Strip metadata | images | ✅ |
+| Rename / Batch rename (pattern: `{name} {n} {date} {ext}` + find/replace) | any | ✅ |
+| Strip metadata (EXIF, tags, PDF info dict) | image video audio pdf | ✅ |
+| Compress / Resize / Rotate / Flip / Grayscale | images | ✅ |
+| Annotate text | images | ✅ |
 | Extract text (OCR) | images | 🍎 Vision framework |
+| Redact text | pdf | ✅ |
 | Compress / Trim / Remove audio / Extract MP3 / Extract frames / Change speed / Merge | video | ✅ |
 | Trim / Merge / Normalize | audio | ✅ |
 | Merge / Split / Extract pages / Rotate | pdf | ✅ |

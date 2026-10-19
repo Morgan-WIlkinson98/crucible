@@ -117,6 +117,26 @@ async function grayscaleImage(srcPath, { outDir = null } = {}) {
   return dst;
 }
 
+// Burn a text caption onto the image (bottom band, white on translucent black).
+async function annotateImage(srcPath, { text, outDir = null } = {}) {
+  const sharp = await loadSharp();
+  const img = await openImage(srcPath);
+  const meta = await img.metadata();
+  const w = meta.width || 800, h = meta.height || 600;
+  const fontSize = Math.max(16, Math.round(w / 28));
+  const bandH = fontSize * 2.4;
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="${h - bandH}" width="${w}" height="${bandH}" fill="rgba(0,0,0,0.55)"/>
+    <text x="${w / 2}" y="${h - bandH / 2 + fontSize * 0.35}" font-size="${fontSize}"
+      font-family="Helvetica,Arial,sans-serif" fill="#fff" text-anchor="middle">${esc(text)}</text>
+  </svg>`;
+  const ext = path.extname(srcPath).slice(1).toLowerCase();
+  const dst = outPath(srcPath, ext === 'heic' ? 'png' : ext, { suffix: '-annotated', dir: outDir });
+  await img.composite([{ input: Buffer.from(svg) }]).toFile(dst);
+  return dst;
+}
+
 async function stripImageMeta(srcPath, { outDir = null } = {}) {
   const ext = path.extname(srcPath).slice(1).toLowerCase();
   const img = await openImage(srcPath);
@@ -127,5 +147,5 @@ async function stripImageMeta(srcPath, { outDir = null } = {}) {
 
 module.exports = {
   convertImage, compressImage, resizeImage, rotateImage,
-  flipImage, grayscaleImage, stripImageMeta,
+  flipImage, grayscaleImage, stripImageMeta, annotateImage,
 };

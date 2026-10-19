@@ -30,6 +30,26 @@ function wedgePath(a0, a1, r0, r1) {
           L ${x2} ${y2} A ${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`;
 }
 
+// word-wrap a label to fit the wedge's chord width at the label radius
+function wrapLabel(text, maxChars, maxLines = 3) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const next = cur ? `${cur} ${w}` : w;
+    if (next.length <= maxChars) { cur = next; continue; }
+    if (cur) lines.push(cur);
+    cur = w;
+  }
+  if (cur) lines.push(cur);
+  while (lines.length > maxLines) {
+    const last = lines.pop();
+    const prev = lines.pop() || '';
+    lines.push(`${(prev + ' ' + last).trim().slice(0, maxChars - 1)}…`);
+  }
+  return lines.map((l) => (l.length > maxChars ? `${l.slice(0, maxChars - 1)}…` : l));
+}
+
 function render() {
   const items = data.wheels[active] || [];
   svg.innerHTML = '';
@@ -59,21 +79,30 @@ function render() {
     svg.appendChild(p);
 
     const mid = (a0 + a1) / 2;
-    const [lx, ly] = polar(CX, CY, (R_IN + R_OUT) / 2, mid);
-    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    t.setAttribute('x', lx); t.setAttribute('y', ly);
-    t.setAttribute('class', 'wedge-label');
-    t.setAttribute('dominant-baseline', 'middle');
-    // rotate label to stay readable on bottom half
-    const label = pick.label.length > 22 ? pick.label.slice(0, 20) + '…' : pick.label;
-    t.textContent = label;
-    svg.appendChild(t);
+    const rMid = (R_IN + R_OUT) / 2;
+    const [lx, ly] = polar(CX, CY, rMid, mid);
+    // available label width ≈ chord across the wedge at label radius
+    const chord = 2 * rMid * Math.sin(((a1 - a0) / 2) * Math.PI / 180);
+    const fontSize = n > 12 ? 11.5 : n > 8 ? 13 : 15;
+    const maxChars = Math.max(6, Math.floor((chord - 14) / (fontSize * 0.55)));
+    const lines = wrapLabel(pick.label, maxChars);
+    const lineH = fontSize + 4;
+    const y0 = ly - ((lines.length - 1) * lineH) / 2;
+    lines.forEach((ln, k) => {
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', lx); t.setAttribute('y', y0 + k * lineH);
+      t.setAttribute('class', 'wedge-label');
+      t.setAttribute('font-size', fontSize);
+      t.setAttribute('dominant-baseline', 'middle');
+      t.textContent = ln;
+      svg.appendChild(t);
+    });
     if (pick.sub) {
       const s = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      s.setAttribute('x', lx); s.setAttribute('y', ly + 17);
+      s.setAttribute('x', lx); s.setAttribute('y', ly + (lines.length * lineH) / 2 + 8);
       s.setAttribute('class', 'wedge-sub');
       s.setAttribute('dominant-baseline', 'middle');
-      s.textContent = pick.sub;
+      s.textContent = pick.sub.length > maxChars ? `${pick.sub.slice(0, maxChars - 1)}…` : pick.sub;
       svg.appendChild(s);
     }
 

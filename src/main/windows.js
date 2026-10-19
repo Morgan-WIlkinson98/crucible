@@ -9,6 +9,9 @@ const IS_MAC = process.platform === 'darwin';
 
 let orbWin = null;
 let wheelWin = null;
+let orbHiddenByWheel = false;
+let orbHiddenBySpace = false;
+let spaceFullscreen = false;
 let settingsWin = null;
 let printWin = null;
 const floatWins = new Set();
@@ -71,6 +74,10 @@ function showWheelAt(point, payload, { focus = true } = {}) {
   w.setBounds({ x, y, width: size, height: size });
   w.setAlwaysOnTop(true, 'screen-saver');
   w.showInactive(); // don't steal focus mid-drag
+  if (orbWin && !orbWin.isDestroyed() && orbWin.isVisible()) {
+    orbWin.hide();
+    orbHiddenByWheel = true;
+  }
   if (focus && !w.isFocused()) w.focus();
   if (w.webContents.isLoading()) {
     w.webContents.once('did-finish-load', () => w.webContents.send('wheel:data', payload));
@@ -82,6 +89,23 @@ function showWheelAt(point, payload, { focus = true } = {}) {
 
 function hideWheel() {
   if (wheelWin && !wheelWin.isDestroyed()) wheelWin.hide();
+  if (orbHiddenByWheel && orbWin && !orbWin.isDestroyed() && !spaceFullscreen) {
+    orbWin.showInactive();
+    orbHiddenByWheel = false;
+  }
+}
+
+// Agent reports when the active macOS space is a fullscreen app — the orb
+// must never appear there. Hide on entry, restore on exit.
+function setSpaceFullscreen(fs) {
+  spaceFullscreen = fs;
+  if (!orbWin || orbWin.isDestroyed()) return;
+  if (fs) {
+    if (orbWin.isVisible()) { orbWin.hide(); orbHiddenBySpace = true; }
+  } else if (orbHiddenBySpace) {
+    orbWin.showInactive();
+    orbHiddenBySpace = false;
+  }
 }
 
 function sendToWheel(channel, data) {
@@ -155,6 +179,7 @@ function floatPreview(filePath) {
 module.exports = {
   createOrb, createWheel, showWheelAt, hideWheel, sendToWheel,
   createSettings, getPrintWindow, htmlToPdfBuffer, floatPreview,
+  setSpaceFullscreen,
   get orb() { return orbWin; },
   get wheel() { return wheelWin; },
 };

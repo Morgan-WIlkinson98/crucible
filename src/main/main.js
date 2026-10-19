@@ -122,6 +122,10 @@ function wireAgent() {
     switch (ev.event) {
       case 'ready':
         agent.inputMonitoring = ev.inputMonitoring;
+        windows.setSpaceFullscreen(!!ev.fullscreen);
+        break;
+      case 'space':
+        windows.setSpaceFullscreen(!!ev.fullscreen);
         break;
       case 'dragstart':
         pendingDrag = { files: ev.files || [] };

@@ -28,7 +28,7 @@ function loadSettings() {
     outputDir: '',              // '' = same folder as source
     orbVisible: true,
     orbPos: null,
-    launchAtLogin: false,
+    launchAtLogin: true,
     globalDrag: IS_MAC,         // macOS: system-wide drag interception
     wheelKeys: { convert: 'shift', tools: 'cmd', actions: 'ctrl' },
   };

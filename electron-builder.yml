@@ -30,16 +30,8 @@ mac:
     NSAppleEventsUsageDescription: "Crucible uses Apple apps (Pages, Numbers, Keynote) to convert Apple-format files."
 dmg:
   title: Crucible
-  window:
-    width: 540
-    height: 380
-  contents:
-    - x: 140
-      y: 190
-    - x: 400
-      y: 190
-      type: link
-      path: /Applications
+  # No custom icon layout — Finder scripting fails on headless CI runners
+  # and leaves the volume mounted (hdiutil detach errors). Default layout works.
 win:
   target:
     - target: nsis

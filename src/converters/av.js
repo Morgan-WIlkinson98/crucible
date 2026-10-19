@@ -155,7 +155,16 @@ async function normalizeAudio(srcPath, { outDir: od = null } = {}) {
   return dst;
 }
 
+// Strip all container/stream metadata while copying streams untouched.
+async function stripAVMeta(srcPath, { outDir: od = null } = {}) {
+  const ext = path.extname(srcPath).slice(1).toLowerCase();
+  const dst = outPath(srcPath, ext, { suffix: '-clean', dir: od });
+  await run(ffmpegPath(), ['-y', '-i', srcPath, '-map_metadata', '-1',
+    '-map_chapters', '-1', '-c', 'copy', dst]);
+  return dst;
+}
+
 module.exports = {
   convertAV, compressAV, trimAV, muteVideo, extractAudio, extractFrames,
-  changeSpeed, mergeAV, normalizeAudio, isAudioOnly,
+  changeSpeed, mergeAV, normalizeAudio, isAudioOnly, stripAVMeta,
 };

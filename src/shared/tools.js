@@ -13,6 +13,12 @@ const TOOLS = [
   { id: 'joinparts', label: 'Join split parts',  appliesTo: '*', icon: 'join' },
   { id: 'rename',    label: 'Rename…',           appliesTo: '*', icon: 'rename',
     needsInput: [{ key: 'name', label: 'New name (no ext)', type: 'text', def: '' }] },
+  { id: 'rename-pattern', label: 'Batch rename…', appliesTo: '*', icon: 'rename',
+    needsInput: [
+      { key: 'pattern', label: 'Pattern — {name} {n} {date} {ext}', type: 'text', def: '{name}-{n}' },
+      { key: 'find',    label: 'Find (optional)',    type: 'text', def: '' },
+      { key: 'replace', label: 'Replace with',       type: 'text', def: '' }] },
+  { id: 'strip-meta', label: 'Strip metadata',    appliesTo: [CATEGORY.IMAGE, CATEGORY.VIDEO, CATEGORY.AUDIO, CATEGORY.PDF], icon: 'clean' },
 
   // ---- images ----
   { id: 'img-compress', label: 'Compress image',   appliesTo: [CATEGORY.IMAGE], icon: 'compress' },
@@ -22,7 +28,8 @@ const TOOLS = [
   { id: 'img-rotate',   label: 'Rotate 90°',       appliesTo: [CATEGORY.IMAGE], icon: 'rotate' },
   { id: 'img-flip',     label: 'Flip horizontal',  appliesTo: [CATEGORY.IMAGE], icon: 'flip' },
   { id: 'img-gray',     label: 'Grayscale',        appliesTo: [CATEGORY.IMAGE], icon: 'gray' },
-  { id: 'img-strip',    label: 'Strip metadata',   appliesTo: [CATEGORY.IMAGE], icon: 'clean' },
+  { id: 'img-annotate', label: 'Annotate text…',   appliesTo: [CATEGORY.IMAGE], icon: 'annotate',
+    needsInput: [{ key: 'text', label: 'Text', type: 'text', def: '' }] },
   { id: 'img-ocr',      label: 'Extract text (OCR)', appliesTo: [CATEGORY.IMAGE], icon: 'ocr',
     platforms: ['darwin'] }, // Vision framework via crucible-agent
 
@@ -45,6 +52,8 @@ const TOOLS = [
 
   // ---- pdf ----
   { id: 'pdf-merge',    label: 'Merge PDFs',       appliesTo: [CATEGORY.PDF], icon: 'merge', multi: true },
+  { id: 'pdf-redact',   label: 'Redact text…',     appliesTo: [CATEGORY.PDF], icon: 'redact',
+    needsInput: [{ key: 'text', label: 'Text to redact', type: 'text', def: '' }] },
   { id: 'pdf-split',    label: 'Split pages',      appliesTo: [CATEGORY.PDF], icon: 'split' },
   { id: 'pdf-extract',  label: 'Extract pages…',   appliesTo: [CATEGORY.PDF], icon: 'pages',
     needsInput: [{ key: 'range', label: 'Pages (e.g. 1-3,5)', type: 'text', def: '1' }] },

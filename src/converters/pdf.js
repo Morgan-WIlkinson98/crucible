@@ -286,8 +286,54 @@ async function rotatePdf(srcPath, { deg = 90, outDir: od = null } = {}) {
   return dst;
 }
 
+// Redact every text run containing `needle` — covers it with a black box.
+// Note: matches whole text runs; a partial-hit run gets fully covered.
+async function redactPdf(srcPath, { text, outDir: od = null } = {}) {
+  const needle = (text || '').toLowerCase();
+  if (!needle) throw new Error('Nothing to redact');
+  const pdfDoc = await loadDoc(srcPath);
+  // collect per-page rects (PDF user-space coords, same space pdf-lib uses)
+  const rects = []; // {pageIndex, x, y, w, h}
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    const page = await pdfDoc.getPage(i);
+    const tc = await page.getTextContent();
+    for (const item of tc.items) {
+      if (!('str' in item)) continue;
+      if (!item.str.toLowerCase().includes(needle)) continue;
+      const [a, b, c, d, e, f] = item.transform;
+      const w = item.width, h = item.height;
+      rects.push({ page: i - 1, x: e, y: f - h * 0.3, w, h: h * 1.25 });
+    }
+  }
+  await pdfDoc.destroy();
+  if (!rects.length) throw new Error(`No occurrences of "${text}" found`);
+
+  const doc = await PDFDocument.load(fs.readFileSync(srcPath), { ignoreEncryption: true });
+  const pages = doc.getPages();
+  for (const r of rects) {
+    pages[r.page].drawRectangle({
+      x: r.x, y: r.y, width: r.w, height: r.h,
+      color: { type: 'RGB', red: 0, green: 0, blue: 0 },
+      opacity: 1,
+    });
+  }
+  const dst = outPath(srcPath, 'pdf', { suffix: '-redacted', dir: od });
+  fs.writeFileSync(dst, await doc.save());
+  return dst;
+}
+
+// Scrub core metadata (title/author/producer/keywords/dates).
+async function stripPdfMeta(srcPath, { outDir: od = null } = {}) {
+  const doc = await PDFDocument.load(fs.readFileSync(srcPath), { ignoreEncryption: true });
+  doc.setTitle(''); doc.setAuthor(''); doc.setSubject(''); doc.setKeywords([]);
+  doc.setProducer(''); doc.setCreator('');
+  const dst = outPath(srcPath, 'pdf', { suffix: '-clean', dir: od });
+  fs.writeFileSync(dst, await doc.save());
+  return dst;
+}
+
 module.exports = {
   pdfToImages, pdfToText, pdfToEpub, pdfToDocx, pdfToXlsx, pdfToPptx,
-  mergePdfs, splitPdf, extractPdfPages, rotatePdf,
+  mergePdfs, splitPdf, extractPdfPages, rotatePdf, redactPdf, stripPdfMeta,
   extractTextPerPage, loadDoc,
 };

@@ -1,0 +1,50 @@
+{
+  "name": "crucible",
+  "productName": "Crucible",
+  "version": "0.1.0",
+  "description": "The zero-click offline file converter. Drag a file, tap a key, drop. macOS + Windows.",
+  "author": "Morgan Wilkinson",
+  "license": "MIT",
+  "private": true,
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:agent": "swiftc -O -o build/crucible-agent swift/crucible-agent.swift -framework Cocoa -framework Vision",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --x64 --arm64",
+    "dist:mac": "npm run build:agent && electron-builder --mac dmg --x64 --arm64",
+    "dist:win": "electron-builder --win nsis --x64",
+    "test": "node test/convert.test.js"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.65",
+    "archiver": "^7.0.1",
+    "docx": "^9.5.0",
+    "extract-zip": "^2.0.1",
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0",
+    "heic-convert": "^2.1.0",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.9.0",
+    "marked": "^15.0.0",
+    "node-unrar-js": "^2.0.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
+    "pptxgenjs": "^3.12.0",
+    "sharp": "^0.33.5",
+    "tar": "^7.4.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "allowScripts": {
+    "@napi-rs/canvas@0.1.100": true,
+    "electron@33.4.11": true,
+    "ffmpeg-static@5.3.0": true,
+    "ffprobe-static@3.1.0": true,
+    "sharp@0.33.5": true
+  }
+}

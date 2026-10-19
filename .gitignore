@@ -1,0 +1,8 @@
+node_modules/
+dist/
+out/
+build/crucible-agent
+*.dmg
+*.exe
+.DS_Store
+*.log

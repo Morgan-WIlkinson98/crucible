@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 520px; height: 520px; background: transparent; overflow: hidden;
+               font-family: -apple-system, 'Segoe UI', sans-serif; user-select: none; }
+  #wheel { position: absolute; inset: 0; }
+  .wedge { fill: rgba(28, 28, 34, .92); stroke: rgba(255,106,42,.25); stroke-width: 1.5;
+           cursor: pointer; transition: fill .12s; }
+  .wedge.hot { fill: rgba(255,106,42,.85); }
+  .wedge-label { fill: #e8e8ec; font-size: 15px; font-weight: 600;
+                 pointer-events: none; text-anchor: middle; }
+  .wedge-sub { fill: #8a8a94; font-size: 11px; pointer-events: none; text-anchor: middle; }
+  .wedge.hot + text, .wedge.hot ~ text { fill: #fff; }
+  #hub { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+         width: 150px; height: 150px; border-radius: 50%;
+         background: radial-gradient(circle at 40% 32%, #3a3a42, #141418 72%);
+         border: 1px solid rgba(255,106,42,.4);
+         box-shadow: 0 0 30px rgba(0,0,0,.6), inset 0 0 20px rgba(255,106,42,.15);
+         display: flex; flex-direction: column; align-items: center; justify-content: center;
+         color: #e8e8ec; text-align: center; pointer-events: none; }
+  #hub .name { font-size: 16px; font-weight: 700; color: #ffb37a; }
+  #hub .count { font-size: 11px; color: #9a9aa4; margin-top: 4px; }
+  #tabs { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+          display: flex; gap: 10px; }
+  #tabs span { font-size: 11px; color: #8a8a94; background: rgba(20,20,26,.85);
+               padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); }
+  #tabs span.on { color: #ffb37a; border-color: rgba(255,106,42,.6); }
+  /* options form (tools that need input) */
+  #form { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+          width: 240px; background: rgba(22,22,28,.97); border: 1px solid rgba(255,106,42,.5);
+          border-radius: 14px; padding: 16px; display: none; z-index: 5;
+          box-shadow: 0 8px 32px rgba(0,0,0,.6); }
+  #form h4 { color: #ffb37a; font-size: 13px; margin-bottom: 10px; }
+  #form label { display: block; color: #9a9aa4; font-size: 11px; margin: 8px 0 3px; }
+  #form input { width: 100%; background: #141418; border: 1px solid #3a3a42; color: #e8e8ec;
+                border-radius: 7px; padding: 7px 9px; font-size: 13px; outline: none; }
+  #form input:focus { border-color: #ff6a2a; }
+  #form .row { display: flex; gap: 8px; margin-top: 14px; }
+  #form button { flex: 1; padding: 8px 0; border-radius: 8px; border: 0; font-size: 13px;
+                 font-weight: 600; cursor: pointer; }
+  #form .go { background: #ff6a2a; color: #fff; }
+  #form .no { background: #2c2c34; color: #c8c8d0; }
+  #toast { position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+           background: rgba(20,20,26,.9); color: #ffb37a; font-size: 12px;
+           padding: 6px 14px; border-radius: 14px; opacity: 0; transition: opacity .2s; }
+</style>
+</head>
+<body>
+  <svg id="wheel" viewBox="0 0 520 520"></svg>
+  <div id="hub"><div class="name"></div><div class="count"></div></div>
+  <div id="tabs"></div>
+  <div id="form"><h4></h4><div class="fields"></div>
+    <div class="row"><button class="no">Cancel</button><button class="go">Go</button></div>
+  </div>
+  <div id="toast"></div>
+<script src="wheel.js"></script>
+</body>
+</html>

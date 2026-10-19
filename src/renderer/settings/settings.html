@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 480px; height: 620px; font-family: -apple-system, 'Segoe UI', sans-serif;
+         background: #17171c; color: #e8e8ec; border-radius: 16px; overflow: hidden;
+         border: 1px solid rgba(255,106,42,.3); user-select: none; }
+  header { padding: 18px 22px 12px; display: flex; align-items: center; justify-content: space-between;
+           -webkit-app-region: drag; }
+  h1 { font-size: 17px; font-weight: 700; color: #ffb37a; }
+  #close { background: none; border: 0; color: #8a8a94; font-size: 18px; cursor: pointer;
+           -webkit-app-region: no-drag; }
+  #close:hover { color: #fff; }
+  section { padding: 10px 22px; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8a8a94; margin: 12px 0 8px; }
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; }
+  .row .l { font-size: 14px; }
+  .row .s { font-size: 11px; color: #8a8a94; margin-top: 2px; }
+  input[type=checkbox] { width: 18px; height: 18px; accent-color: #ff6a2a; cursor: pointer; }
+  select { background: #23232b; color: #e8e8ec; border: 1px solid #3a3a42; border-radius: 7px;
+           padding: 5px 9px; font-size: 13px; outline: none; }
+  button.act { background: #23232b; color: #e8e8ec; border: 1px solid #3a3a42; border-radius: 7px;
+               padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  button.act:hover { border-color: #ff6a2a; }
+  #outdir { font-size: 12px; color: #9a9aa4; max-width: 240px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
+  .warn { color: #ffb37a; font-size: 11px; }
+  .ok { color: #6be28a; font-size: 11px; }
+  hr { border: 0; border-top: 1px solid #23232b; margin: 4px 22px; }
+  .note { font-size: 11px; color: #6a6a74; padding: 4px 22px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<header><h1>Crucible</h1><button id="close">✕</button></header>
+
+<section>
+  <h2>Output</h2>
+  <div class="row">
+    <div><div class="l">Output folder</div><div class="s">Where converted files are written</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="outdir">Same as source</span><button class="act" id="pick">Choose…</button>
+    </div>
+  </div>
+</section>
+<hr>
+<section>
+  <h2>Orb</h2>
+  <div class="row"><div class="l">Show floating orb</div><input type="checkbox" id="orb"></div>
+  <div class="row mac-only"><div><div class="l">Global drag &amp; drop</div>
+    <div class="s">Tap a key mid-drag to open the wheel anywhere</div></div>
+    <input type="checkbox" id="globalDrag"></div>
+  <div class="row mac-only">
+    <div class="l">Input Monitoring</div>
+    <div><span id="perm" class="warn">checking…</span>
+    <button class="act" id="grant" style="margin-left:8px">Grant…</button></div>
+  </div>
+</section>
+<hr>
+<section>
+  <h2>Wheel keys</h2>
+  <div class="row"><div class="l">Convert wheel</div><select id="k-convert"></select></div>
+  <div class="row"><div class="l">Tools wheel</div><select id="k-tools"></select></div>
+  <div class="row"><div class="l">Actions wheel</div><select id="k-actions"></select></div>
+</section>
+<hr>
+<section>
+  <h2>General</h2>
+  <div class="row"><div class="l">Launch at login</div><input type="checkbox" id="login"></div>
+</section>
+<p class="note">Drag a file onto the orb — or on macOS, start dragging anywhere and tap
+⇧ Shift (convert), ⌘ Cmd (tools), or ⌃ Ctrl (actions). Drop on a wedge. Esc cancels.</p>
+
+<script src="settings.js"></script>
+</body>
+</html>

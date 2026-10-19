@@ -33,9 +33,16 @@ Architecture notes: **[docs/TECH.md](docs/TECH.md)**.
 
 ### macOS
 
-Download `Crucible-*-mac.dmg` from [Releases](../../releases), drag Crucible to
-Applications. The build is unsigned — on first launch: right-click → Open, or
-`xattr -dr com.apple.quarantine /Applications/Crucible.app`.
+Download from [Releases](../../releases): `Crucible-*-arm64.dmg` (Apple
+Silicon) or `Crucible-*.dmg` (Intel). Drag Crucible to Applications.
+
+The build is unsigned, so macOS may report it "damaged" on first launch —
+right-click → Open does **not** bypass this on Apple Silicon. Remove the
+download quarantine attribute instead:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Crucible.app
+```
 
 For global drag-to-convert, grant **Input Monitoring** permission when prompted
 (System Settings → Privacy & Security → Input Monitoring → Crucible), then

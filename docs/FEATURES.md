@@ -102,3 +102,17 @@ filtering.
 - **Editable PPTX output from PDF** — v1 emits image-per-slide decks.
 - **OS-wide drag detection on Windows** — needs shell drop-source hooks; orb only.
 - **Cloud/networked conversions** — never; everything is local.
+
+## Roadmap (informed by competitor research & user requests)
+
+- **On-device transcription** (audio/video → text/SRT via whisper.cpp) —
+  Permute's most-praised differentiator; heavy but very requested.
+- **Watch folders** — auto-convert anything dropped in a watched directory.
+- **RAW / PSD / JPEG XL / EXR** image inputs — needs libraw/vips extras.
+- **PDF compression** — needs bundled Ghostscript (or qpdf + re-render).
+- **Folder-tree preservation** — convert a whole directory and mirror structure.
+- **Editable PPTX from PDF** — layout analysis; hard.
+- **Global drag on Windows** — `SetWindowsHookEx` + COM drop-source hooks.
+- **Notarized/signed releases** — Developer ID cert + SmartScreen cert.
+- **Batch queue UI** — persisted job list with retry.
+- **Custom scripts as wheel items** — user-defined shell tools on the wheel.

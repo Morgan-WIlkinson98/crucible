@@ -21,7 +21,8 @@ const TOOLS = [
   { id: 'strip-meta', label: 'Strip metadata',    appliesTo: [CATEGORY.IMAGE, CATEGORY.VIDEO, CATEGORY.AUDIO, CATEGORY.PDF], icon: 'clean' },
 
   // ---- images ----
-  { id: 'img-compress', label: 'Compress image',   appliesTo: [CATEGORY.IMAGE], icon: 'compress' },
+  { id: 'img-compress', label: 'Compress image…',  appliesTo: [CATEGORY.IMAGE], icon: 'compress',
+    needsInput: [{ key: 'quality', label: 'Quality %', type: 'number', def: 60 }] },
   { id: 'img-resize',   label: 'Resize 50%',       appliesTo: [CATEGORY.IMAGE], icon: 'resize' },
   { id: 'img-resize-w', label: 'Resize to width…', appliesTo: [CATEGORY.IMAGE], icon: 'resize',
     needsInput: [{ key: 'width', label: 'Width (px)', type: 'number', def: 1024 }] },
@@ -34,7 +35,8 @@ const TOOLS = [
     platforms: ['darwin'] }, // Vision framework via crucible-agent
 
   // ---- video ----
-  { id: 'vid-compress', label: 'Compress video',   appliesTo: [CATEGORY.VIDEO], icon: 'compress' },
+  { id: 'vid-compress', label: 'Compress video…',  appliesTo: [CATEGORY.VIDEO], icon: 'compress',
+    needsInput: [{ key: 'crf', label: 'CRF (lower=better, 18-40)', type: 'number', def: 28 }] },
   { id: 'vid-trim',     label: 'Trim…',            appliesTo: [CATEGORY.VIDEO, CATEGORY.AUDIO], icon: 'trim',
     needsInput: [
       { key: 'start', label: 'Start (s or mm:ss)', type: 'text', def: '0' },

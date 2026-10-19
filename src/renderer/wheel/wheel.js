@@ -102,7 +102,7 @@ function render() {
       s.setAttribute('x', lx); s.setAttribute('y', ly + (lines.length * lineH) / 2 + 8);
       s.setAttribute('class', 'wedge-sub');
       s.setAttribute('dominant-baseline', 'middle');
-      s.textContent = pick.sub;
+      s.textContent = pick.sub.length > maxChars ? `${pick.sub.slice(0, maxChars - 1)}…` : pick.sub;
       svg.appendChild(s);
     }
 

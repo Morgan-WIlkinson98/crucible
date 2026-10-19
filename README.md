@@ -21,7 +21,7 @@ Everything runs locally. Your files never leave your machine.
 
 | | macOS | Windows |
 |---|---|---|
-| Conversion options | ~200 (incl. Pages/Numbers/Keynote) | ~180 |
+| Conversion options | 328 (incl. Pages/Numbers/Keynote) | 286 |
 | File tools | 22 + Vision OCR | 22 |
 | File actions | 10 incl. AirDrop / Share sheet | 8 |
 | Global drag-to-convert | ✅ via `crucible-agent` | orb only (v2) |

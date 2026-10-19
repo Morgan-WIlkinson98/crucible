@@ -66,6 +66,26 @@ function wrapLabel(text, maxChars, maxLines = 3) {
   return lines.map((l) => (l.length > maxChars ? `${l.slice(0, maxChars - 1)}…` : l));
 }
 
+// word-wrap a label to fit the wedge's chord width at the label radius
+function wrapLabel(text, maxChars, maxLines = 3) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const next = cur ? `${cur} ${w}` : w;
+    if (next.length <= maxChars) { cur = next; continue; }
+    if (cur) lines.push(cur);
+    cur = w;
+  }
+  if (cur) lines.push(cur);
+  while (lines.length > maxLines) {
+    const last = lines.pop();
+    const prev = lines.pop() || '';
+    lines.push(`${(prev + ' ' + last).trim().slice(0, maxChars - 1)}…`);
+  }
+  return lines.map((l) => (l.length > maxChars ? `${l.slice(0, maxChars - 1)}…` : l));
+}
+
 function render() {
   const items = data.wheels[active] || [];
   svg.innerHTML = '';

@@ -1,7 +1,7 @@
 {
   "name": "crucible",
   "productName": "Crucible",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "The zero-click offline file converter. Drag a file, tap a key, drop. macOS + Windows.",
   "author": "Morgan Wilkinson",
   "license": "MIT",

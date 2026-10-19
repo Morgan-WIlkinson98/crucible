@@ -148,7 +148,8 @@ const MATRIX = {
 };
 
 // extensions that only work on macOS regardless of cell annotation
-const MAC_ONLY_INPUTS = new Set(['pages', 'numbers', 'key', 'rtfd', 'textclipping']);
+// (doc/rtf use textutil; pages/numbers/key/rtfd/textclipping are Apple-native)
+const MAC_ONLY_INPUTS = new Set(['pages', 'numbers', 'key', 'rtfd', 'textclipping', 'doc', 'rtf']);
 // doc/rtf input works everywhere we can parse; rtf parse is textutil on mac, basic strip on win
 
 function canonExt(ext) {

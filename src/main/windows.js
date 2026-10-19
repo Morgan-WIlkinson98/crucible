@@ -72,8 +72,11 @@ function showWheelAt(point, payload, { focus = true } = {}) {
   w.setAlwaysOnTop(true, 'screen-saver');
   w.showInactive(); // don't steal focus mid-drag
   if (focus && !w.isFocused()) w.focus();
-  w.webContents.once('did-finish-load', () => w.webContents.send('wheel:data', payload));
-  if (!w.webContents.isLoading()) w.webContents.send('wheel:data', payload);
+  if (w.webContents.isLoading()) {
+    w.webContents.once('did-finish-load', () => w.webContents.send('wheel:data', payload));
+  } else {
+    w.webContents.send('wheel:data', payload);
+  }
   return w;
 }
 

@@ -21,6 +21,21 @@ import Cocoa
 import Vision
 import IOKit.hid
 
+// Private CoreGraphics SPI for space-type inspection (used by many window tools;
+// stable in practice, fails safe to "not fullscreen" if unavailable)
+@_silgen_name("CGSMainConnectionID") func CGSMainConnectionID() -> Int32
+@_silgen_name("CGSGetActiveSpace") func CGSGetActiveSpace(_ cid: Int32) -> UInt64
+@_silgen_name("CGSSpaceGetType") func CGSSpaceGetType(_ cid: Int32, _ space: UInt64) -> Int32
+
+func activeSpaceIsFullscreen() -> Bool {
+    let conn = CGSMainConnectionID()
+    return CGSSpaceGetType(conn, CGSGetActiveSpace(conn)) == 4  // kCGSSpaceFullscreen
+}
+
+func emitSpace() {
+    emit(["event": "space", "fullscreen": activeSpaceIsFullscreen()])
+}
+
 let stdout = FileHandle.standardOutput
 func emit(_ obj: [String: Any]) {
     if let d = try? JSONSerialization.data(withJSONObject: obj) {
@@ -243,7 +258,13 @@ DispatchQueue.global().async {
     }
 }
 
-emit(["event": "ready", "inputMonitoring": granted])
+// report space fullscreen state on every space switch
+NSWorkspace.shared.notificationCenter.addObserver(
+    forName: NSWorkspace.activeSpaceDidChangeNotification,
+    object: nil, queue: .main) { _ in emitSpace() }
+
+emit(["event": "ready", "inputMonitoring": granted,
+      "fullscreen": activeSpaceIsFullscreen()])
 if granted {
     if startEventTap() {
         emit(["event": "listening"])

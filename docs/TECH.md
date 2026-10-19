@@ -2,26 +2,10 @@
 
 ## Architecture
 
-```
-┌────────────────────────────────────────────────────────────┐
-│ Electron main (src/main/main.js)                           │
-│  ├─ tray, settings (userData/settings.json), job runner    │
-│  ├─ orb window    — 96px transparent, NORMAL window level  │
-│  │   (not always-on-top → sits on desktop, hidden by apps) │
-│  ├─ wheel window  — 520px transparent overlay,             │
-│  │   screen-saver level while shown, visibleOnFullScreen   │
-│  ├─ settings window                                        │
-│  ├─ hidden window — printToPDF for any HTML → PDF path     │
-│  └─ crucible-agent bridge (macOS only) ────┐               │
-└────────────────────────────────────────────│───────────────┘
-                                             │ JSON lines
-┌────────────────────────────────────────────▼───────────────┐
-│ crucible-agent (Swift, macOS)                              │
-│  CGEventTap → drag detection, modifier taps, drop coords   │
-│  NSPasteboard(.drag) → file URLs mid-drag                  │
-│  Vision OCR, NSSharingService (AirDrop/Share)              │
-└────────────────────────────────────────────────────────────┘
-```
+![architecture](diagrams/architecture.svg)
+
+Source: `docs/diagrams/architecture.d2` — regenerate with
+`d2 --theme 200 --layout elk docs/diagrams/architecture.d2 docs/diagrams/architecture.svg`.
 
 ## The two input flows
 

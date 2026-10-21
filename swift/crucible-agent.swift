@@ -196,12 +196,16 @@ func shareFiles(_ files: [String], service: String?) {
             emit(["event": "error", "message": "AirDrop unavailable"])
             return
         }
-        svc.perform(withItems: urls)
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            svc.perform(withItems: urls)
+        }
         emit(["event": "result", "ok": true])
         return
     }
     // generic share sheet: transient 1px window at the mouse
     DispatchQueue.main.async {
+        NSApp.activate(ignoringOtherApps: true)
         let pt = NSEvent.mouseLocation
         let win = NSWindow(contentRect: NSRect(x: pt.x, y: pt.y, width: 1, height: 1),
                            styleMask: .borderless, backing: .buffered, defer: false)
@@ -245,6 +249,11 @@ func handleCommand(_ line: String) {
 }
 
 // ---------------------------------------------------------------- main
+// NSApplication must exist before any AppKit UI (share picker, AirDrop)
+// can present from this process. .accessory = no Dock icon / menu bar.
+let nsApp = NSApplication.shared
+nsApp.setActivationPolicy(.accessory)
+
 let access = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
 let granted = (access == kIOHIDAccessTypeGranted)
 if !granted {

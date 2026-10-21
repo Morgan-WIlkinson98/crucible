@@ -187,7 +187,22 @@ func msg(_ s: String) -> NSError {
     NSError(domain: "crucible-agent", code: 1, userInfo: [NSLocalizedDescriptionKey: s])
 }
 
-var shareWindow: NSWindow?
+var shareWindow: NSPanel?
+
+// Dismisses the share anchor when the picker is chosen or focus leaves it.
+final class ShareDismiss: NSObject, NSSharingServicePickerDelegate, NSWindowDelegate {
+    static let shared = ShareDismiss()
+    weak var win: NSPanel?
+    func sharingServicePicker(_ picker: NSSharingServicePicker, didChoose service: NSSharingService?) { close() }
+    func windowDidResignKey(_ n: Notification) { close() }
+    private func close() {
+        DispatchQueue.main.async {
+            self.win?.orderOut(nil)
+            self.win = nil
+            shareWindow = nil
+        }
+    }
+}
 
 func shareFiles(_ files: [String], service: String?) {
     let urls = files.map { URL(fileURLWithPath: $0) }
@@ -196,26 +211,29 @@ func shareFiles(_ files: [String], service: String?) {
             emit(["event": "error", "message": "AirDrop unavailable"])
             return
         }
-        svc.perform(withItems: urls)
+        // AirDrop UI is presented by sharingd — no activation needed
+        DispatchQueue.main.async { svc.perform(withItems: urls) }
         emit(["event": "result", "ok": true])
         return
     }
-    // generic share sheet: transient 1px window at the mouse
+    // generic share sheet: a nonactivating panel anchors the picker without
+    // stealing frontmost status (which would hide the orb); it can become
+    // key, so focus leaving it dismisses the whole thing naturally
     DispatchQueue.main.async {
         let pt = NSEvent.mouseLocation
-        let win = NSWindow(contentRect: NSRect(x: pt.x, y: pt.y, width: 1, height: 1),
-                           styleMask: .borderless, backing: .buffered, defer: false)
+        let win = NSPanel(contentRect: NSRect(x: pt.x, y: pt.y, width: 1, height: 1),
+                          styleMask: [.borderless, .nonactivatingPanel],
+                          backing: .buffered, defer: false)
         win.level = .floating
         win.isOpaque = false
-        win.makeKeyAndOrderFront(nil)
+        win.delegate = ShareDismiss.shared
+        win.orderFrontRegardless()
+        win.makeKey()
         shareWindow = win
+        ShareDismiss.shared.win = win
         let picker = NSSharingServicePicker(items: urls)
+        picker.delegate = ShareDismiss.shared
         picker.show(relativeTo: .zero, of: win.contentView!, preferredEdge: .minY)
-        // keep the window alive long enough for a selection
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
-            shareWindow?.orderOut(nil)
-            shareWindow = nil
-        }
         emit(["event": "result", "ok": true])
     }
 }
@@ -245,6 +263,11 @@ func handleCommand(_ line: String) {
 }
 
 // ---------------------------------------------------------------- main
+// NSApplication must exist before any AppKit UI (share picker, AirDrop)
+// can present from this process. .accessory = no Dock icon / menu bar.
+let nsApp = NSApplication.shared
+nsApp.setActivationPolicy(.accessory)
+
 let access = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
 let granted = (access == kIOHIDAccessTypeGranted)
 if !granted {

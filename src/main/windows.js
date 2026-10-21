@@ -2,6 +2,7 @@
 // radial overlay), settings, hidden print window for printToPDF,
 // and float preview windows.
 const path = require('path');
+const fs = require('fs');
 const { BrowserWindow, screen, app } = require('electron');
 
 const R = (p) => path.join(app.getAppPath(), 'src', 'renderer', p);
@@ -156,11 +157,12 @@ function floatPreview(filePath) {
   });
   w.setAlwaysOnTop(true, 'floating');
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const imgMime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', svg: 'image/svg+xml', avif: 'image/avif' };
   let body;
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'avif'].includes(ext)) {
-    body = `<img src="file://${filePath}" style="max-width:100%;max-height:100%;object-fit:contain">`;
+  // data: pages can't load file:// subresources — embed images inline
+  if (imgMime[ext] && fs.statSync(filePath).size <= 30 * 1024 * 1024) {
+    body = `<img src="data:${imgMime[ext]};base64,${fs.readFileSync(filePath).toString('base64')}" style="max-width:100%;max-height:100%;object-fit:contain">`;
   } else if (['txt', 'md', 'srt', 'vtt', 'csv', 'tsv'].includes(ext)) {
-    const fs = require('fs');
     body = `<pre style="white-space:pre-wrap;font:12px Menlo,monospace;color:#eee">${esc(fs.readFileSync(filePath, 'utf8').slice(0, 20000))}</pre>`;
   } else {
     body = `<div style="color:#eee;font:14px -apple-system;padding:2em;text-align:center">${esc(path.basename(filePath))}<br><br>No preview</div>`;

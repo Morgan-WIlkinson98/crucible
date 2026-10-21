@@ -10,6 +10,78 @@ function escapeXml(s) {
     ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 }
 
+// ---- XHTML sanitization ------------------------------------------------
+// Chapter bodies come from real-world HTML (unclosed tags, void elements
+// written HTML-style, named entities XML doesn't know). EPUB readers parse
+// chapters as strict XML, so normalize before embedding.
+const VOID_TAGS = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+const NAMED_ENTITIES = {
+  nbsp: 160, iexcl: 161, cent: 162, pound: 163, curren: 164, yen: 165, brvbar: 166, sect: 167,
+  uml: 168, copy: 169, ordf: 170, laquo: 171, not: 172, shy: 173, reg: 174, macr: 175,
+  deg: 176, plusmn: 177, sup2: 178, sup3: 179, acute: 180, micro: 181, para: 182, middot: 183,
+  cedil: 184, sup1: 185, ordm: 186, raquo: 187, frac14: 188, frac12: 189, frac34: 190, iquest: 191,
+  times: 215, divide: 247, szlig: 223, agrave: 224, aacute: 225, acirc: 226, atilde: 227, auml: 228,
+  aring: 229, aelig: 230, ccedil: 231, egrave: 232, eacute: 233, ecirc: 234, euml: 235,
+  igrave: 236, iacute: 237, icirc: 238, iuml: 239, eth: 240, ntilde: 241, ograve: 242, oacute: 243,
+  ocirc: 244, otilde: 245, ouml: 246, oslash: 248, ugrave: 249, uacute: 250, ucirc: 251, uuml: 252,
+  yacute: 253, thorn: 254, yuml: 255, Agrave: 192, Aacute: 193, Acirc: 194, Atilde: 195, Auml: 196,
+  Aring: 197, Aelig: 198, Ccedil: 199, Egrave: 200, Eacute: 201, Ecirc: 202, Euml: 203,
+  Igrave: 204, Iacute: 205, Icirc: 206, Iuml: 207, Ntilde: 209, Ograve: 210, Oacute: 211,
+  Ocirc: 212, Otilde: 213, Ouml: 214, Oslash: 216, Ugrave: 217, Uacute: 218, Ucirc: 219, Uuml: 220,
+  Yacute: 221, ndash: 8211, mdash: 8212, lsquo: 8216, rsquo: 8217, sbquo: 8218, ldquo: 8220,
+  rdquo: 8221, bdquo: 8222, dagger: 8224, Dagger: 8225, bull: 8226, hellip: 8230, permil: 8240,
+  prime: 8242, Prime: 8243, lsaquo: 8249, rsaquo: 8250, oline: 8254, frasl: 8260, euro: 8364,
+  trade: 8482, larr: 8592, uarr: 8593, rarr: 8594, darr: 8595, harr: 8596, minus: 8722, infin: 8734,
+};
+
+function fixEntities(s) {
+  s = s.replace(/&(?:#x[0-9a-fA-F]+|#\d+|[a-zA-Z][a-zA-Z0-9]*);?/g, (m) => {
+    if (/^&#\d+;|^&#x[0-9a-fA-F]+;/.test(m)) return m;
+    const name = m.slice(1).replace(/;$/, '');
+    if (['amp', 'lt', 'gt', 'quot', 'apos'].includes(name)) return `&${name};`;
+    if (NAMED_ENTITIES[name] != null) return `&#${NAMED_ENTITIES[name]};`;
+    return `&amp;${name}${m.endsWith(';') ? ';' : ''}`;
+  });
+  return s.replace(/&(?!#?[a-zA-Z0-9]+;)/g, '&amp;');
+}
+
+// Balance tags: drop unmatched end tags, self-close void elements,
+// auto-close anything left open. Not a parser — just keeps readers happy.
+function toXhtml(html) {
+  let s = String(html)
+    .replace(/<script[\s\S]*?<\/script\s*>/gi, '')
+    .replace(/<style[\s\S]*?<\/style\s*>/gi, '');
+  s = fixEntities(s);
+  const TAG_RE = /<!--[\s\S]*?-->|<![^>]*>|<\?[\s\S]*?\?>|<\/([a-zA-Z][\w:-]*)\s*>|<([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^'">])*)>/g;
+  const stack = [], out = [];
+  let last = 0, m;
+  while ((m = TAG_RE.exec(s))) {
+    out.push(s.slice(last, m.index));
+    last = TAG_RE.lastIndex;
+    if (m[1]) {                              // end tag
+      const name = m[1].toLowerCase();
+      if (VOID_TAGS.has(name)) continue;
+      const idx = stack.lastIndexOf(name);
+      if (idx === -1) continue;              // stray end tag — drop
+      while (stack.length > idx) out.push(`</${stack.pop()}>`);
+    } else if (m[2]) {                       // start tag
+      const name = m[2].toLowerCase();
+      const attrs = m[3] || '';
+      if (/\/\s*$/.test(attrs)) { out.push(`<${name}${attrs.slice(0, attrs.lastIndexOf('/'))}/>`); continue; }
+      if (VOID_TAGS.has(name)) { out.push(`<${name}${attrs}/>`); continue; }
+      stack.push(name);
+      out.push(`<${name}${attrs}>`);
+    } else {                                 // comment / doctype / PI
+      const tok = m[0];
+      if (tok.startsWith('<!--') && !/--/.test(tok.slice(4, -3))) out.push(tok);
+      // drop DOCTYPEs and processing instructions — invalid mid-document
+    }
+  }
+  out.push(s.slice(last));
+  while (stack.length) out.push(`</${stack.pop()}>`);
+  return out.join('');
+}
+
 // Write an EPUB from {title, author, chapters: [{title, html}], images: [{id, name, data(Buffer), mediaType}]}
 async function writeEpub({ title = 'Untitled', author = 'Crucible', chapters = [], images = [] }, destPath) {
   const zip = new JSZip();
@@ -58,7 +130,7 @@ async function writeEpub({ title = 'Untitled', author = 'Crucible', chapters = [
     zip.file(`OEBPS/text/chap${i}.xhtml`, `<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>${escapeXml(c.title || `Chapter ${i + 1}`)}</title></head>
-<body>${c.html}</body></html>`);
+<body>${toXhtml(c.html)}</body></html>`);
   });
   images.forEach((im) => zip.file(`OEBPS/images/${im.name}`, im.data));
 

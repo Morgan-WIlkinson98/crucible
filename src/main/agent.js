@@ -88,6 +88,7 @@ class Agent extends EventEmitter {
 
   request(obj, timeout = 30000) {
     return new Promise((resolve, reject) => {
+      if (!this.proc) return reject(new Error('crucible-agent not running'));
       this._pending.push({ resolve, reject });
       this.send(obj);
       setTimeout(() => {

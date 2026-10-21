@@ -128,7 +128,7 @@ function wireAgent() {
         windows.setSpaceFullscreen(!!ev.fullscreen);
         break;
       case 'dragstart':
-        pendingDrag = { files: ev.files || [] };
+        if (settings.globalDrag) pendingDrag = { files: ev.files || [] };
         break;
       case 'key': {
         if (!pendingDrag) break;
@@ -158,7 +158,7 @@ function wireAgent() {
     }
   });
   agent.on('error', (e) => console.error('agent:', e));
-  if (settings.globalDrag) agent.start();
+  agent.start();   // always on macOS — also powers OCR, share, space detection
 }
 
 // ------------------------------------------------------------- helpers injection
@@ -201,10 +201,7 @@ function makeTray() {
     },
     ...(IS_MAC ? [{
       label: 'Global drag (Shift wheel)', type: 'checkbox', checked: settings.globalDrag,
-      click: (mi) => {
-        saveSettings({ globalDrag: mi.checked });
-        mi.checked ? agent.start() : agent.stop();
-      },
+      click: (mi) => saveSettings({ globalDrag: mi.checked }),
     }] : []),
     { label: 'Settings…', click: () => windows.createSettings() },
     { type: 'separator' },
@@ -220,7 +217,7 @@ function wireIPC() {
   ipcMain.handle('settings:set', (_e, patch) => {
     const s = saveSettings(patch);
     app.setLoginItemSettings({ openAtLogin: s.launchAtLogin });
-    if ('globalDrag' in patch && IS_MAC) patch.globalDrag ? agent.start() : agent.stop();
+    // globalDrag gates drag interception only; agent stays up for OCR/share/space
     if ('orbVisible' in patch) patch.orbVisible ? windows.createOrb(s.orbPos) : windows.orb?.close();
     return s;
   });

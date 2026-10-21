@@ -11,9 +11,9 @@ const TOOLS = [
   { id: 'splitfile', label: 'Split into parts',  appliesTo: '*', icon: 'split',
     needsInput: [{ key: 'sizeMB', label: 'Part size (MB)', type: 'number', def: 10 }] },
   { id: 'joinparts', label: 'Join split parts',  appliesTo: '*', icon: 'join' },
-  { id: 'rename',    label: 'Rename…',           appliesTo: '*', icon: 'rename',
+  { id: 'rename',    label: 'Rename',           appliesTo: '*', icon: 'rename',
     needsInput: [{ key: 'name', label: 'New name (no ext)', type: 'text', def: '' }] },
-  { id: 'rename-pattern', label: 'Batch rename…', appliesTo: '*', icon: 'rename',
+  { id: 'rename-pattern', label: 'Batch rename', appliesTo: '*', icon: 'rename',
     needsInput: [
       { key: 'pattern', label: 'Pattern — {name} {n} {date} {ext}', type: 'text', def: '{name}-{n}' },
       { key: 'find',    label: 'Find (optional)',    type: 'text', def: '' },
@@ -21,30 +21,30 @@ const TOOLS = [
   { id: 'strip-meta', label: 'Strip metadata',    appliesTo: [CATEGORY.IMAGE, CATEGORY.VIDEO, CATEGORY.AUDIO, CATEGORY.PDF], icon: 'clean' },
 
   // ---- images ----
-  { id: 'img-compress', label: 'Compress image…',  appliesTo: [CATEGORY.IMAGE], icon: 'compress',
+  { id: 'img-compress', label: 'Compress image',  appliesTo: [CATEGORY.IMAGE], icon: 'compress',
     needsInput: [{ key: 'quality', label: 'Quality %', type: 'number', def: 60 }] },
   { id: 'img-resize',   label: 'Resize 50%',       appliesTo: [CATEGORY.IMAGE], icon: 'resize' },
-  { id: 'img-resize-w', label: 'Resize to width…', appliesTo: [CATEGORY.IMAGE], icon: 'resize',
+  { id: 'img-resize-w', label: 'Resize width', appliesTo: [CATEGORY.IMAGE], icon: 'resize',
     needsInput: [{ key: 'width', label: 'Width (px)', type: 'number', def: 1024 }] },
   { id: 'img-rotate',   label: 'Rotate 90°',       appliesTo: [CATEGORY.IMAGE], icon: 'rotate' },
   { id: 'img-flip',     label: 'Flip horizontal',  appliesTo: [CATEGORY.IMAGE], icon: 'flip' },
   { id: 'img-gray',     label: 'Grayscale',        appliesTo: [CATEGORY.IMAGE], icon: 'gray' },
-  { id: 'img-annotate', label: 'Annotate text…',   appliesTo: [CATEGORY.IMAGE], icon: 'annotate',
+  { id: 'img-annotate', label: 'Annotate text',   appliesTo: [CATEGORY.IMAGE], icon: 'annotate',
     needsInput: [{ key: 'text', label: 'Text', type: 'text', def: '' }] },
-  { id: 'img-ocr',      label: 'Extract text (OCR)', appliesTo: [CATEGORY.IMAGE], icon: 'ocr',
+  { id: 'img-ocr',      label: 'OCR text', appliesTo: [CATEGORY.IMAGE], icon: 'ocr',
     platforms: ['darwin'] }, // Vision framework via crucible-agent
 
   // ---- video ----
-  { id: 'vid-compress', label: 'Compress video…',  appliesTo: [CATEGORY.VIDEO], icon: 'compress',
+  { id: 'vid-compress', label: 'Compress video',  appliesTo: [CATEGORY.VIDEO], icon: 'compress',
     needsInput: [{ key: 'crf', label: 'CRF (lower=better, 18-40)', type: 'number', def: 28 }] },
-  { id: 'vid-trim',     label: 'Trim…',            appliesTo: [CATEGORY.VIDEO, CATEGORY.AUDIO], icon: 'trim',
+  { id: 'vid-trim',     label: 'Trim',            appliesTo: [CATEGORY.VIDEO, CATEGORY.AUDIO], icon: 'trim',
     needsInput: [
       { key: 'start', label: 'Start (s or mm:ss)', type: 'text', def: '0' },
       { key: 'end',   label: 'End (s or mm:ss)',   type: 'text', def: '' }] },
   { id: 'vid-mute',     label: 'Remove audio',     appliesTo: [CATEGORY.VIDEO], icon: 'mute' },
-  { id: 'vid-audio',    label: 'Extract audio (MP3)', appliesTo: [CATEGORY.VIDEO], icon: 'audio' },
+  { id: 'vid-audio',    label: 'Extract audio', appliesTo: [CATEGORY.VIDEO], icon: 'audio' },
   { id: 'vid-frames',   label: 'Extract frames',   appliesTo: [CATEGORY.VIDEO], icon: 'frames' },
-  { id: 'vid-speed',    label: 'Change speed…',    appliesTo: [CATEGORY.VIDEO], icon: 'speed',
+  { id: 'vid-speed',    label: 'Change speed',    appliesTo: [CATEGORY.VIDEO], icon: 'speed',
     needsInput: [{ key: 'factor', label: 'Speed (e.g. 0.5, 2)', type: 'number', def: 2 }] },
   { id: 'vid-merge',    label: 'Merge videos',     appliesTo: [CATEGORY.VIDEO], icon: 'merge', multi: true },
 
@@ -54,12 +54,12 @@ const TOOLS = [
 
   // ---- pdf ----
   { id: 'pdf-merge',    label: 'Merge PDFs',       appliesTo: [CATEGORY.PDF], icon: 'merge', multi: true },
-  { id: 'pdf-redact',   label: 'Redact text…',     appliesTo: [CATEGORY.PDF], icon: 'redact',
+  { id: 'pdf-redact',   label: 'Redact text',     appliesTo: [CATEGORY.PDF], icon: 'redact',
     needsInput: [{ key: 'text', label: 'Text to redact', type: 'text', def: '' }] },
   { id: 'pdf-split',    label: 'Split pages',      appliesTo: [CATEGORY.PDF], icon: 'split' },
-  { id: 'pdf-extract',  label: 'Extract pages…',   appliesTo: [CATEGORY.PDF], icon: 'pages',
+  { id: 'pdf-extract',  label: 'Extract pages',   appliesTo: [CATEGORY.PDF], icon: 'pages',
     needsInput: [{ key: 'range', label: 'Pages (e.g. 1-3,5)', type: 'text', def: '1' }] },
-  { id: 'pdf-rotate',   label: 'Rotate pages 90°', appliesTo: [CATEGORY.PDF], icon: 'rotate' },
+  { id: 'pdf-rotate',   label: 'Rotate 90°', appliesTo: [CATEGORY.PDF], icon: 'rotate' },
 ];
 
 function toolsFor(category, platform = process.platform) {

@@ -31,23 +31,34 @@ function cornersBetween(t0, t1) {
 }
 
 // ring cell for perimeter range [t0, t1]: square outer boundary, radial
-// sides, and a circular arc hugging the hub on the inside
+// sides, and a circular arc hugging the hub on the inside. The junctions
+// between sides and arc are filleted (quadratic beziers) so cells flow
+// into the circle instead of cornering sharply.
+const pt = (a, r) => [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+const fmt = (p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+
 function cellPath(t0, t1) {
   const corners = cornersBetween(t0, t1);
   const outer = [t0, ...corners, t1].map((t) => squarePoint(t, SO));
   const a0 = Math.atan2(outer[0][1] - CY, outer[0][0] - CX);
   const a1 = Math.atan2(outer[outer.length - 1][1] - CY, outer[outer.length - 1][0] - CX);
-  const i0 = [CX + RI * Math.cos(a0), CY + RI * Math.sin(a0)];
-  const i1 = [CX + RI * Math.cos(a1), CY + RI * Math.sin(a1)];
   let span = a1 - a0;
   while (span < 0) span += Math.PI * 2;
-  const large = span > Math.PI ? 1 : 0;
-  return 'M ' + outer.map((p) => p.join(' ')).join(' L ') +
-         ` L ${i1[0]} ${i1[1]} A ${RI} ${RI} 0 ${large} 0 ${i0[0]} ${i0[1]} Z`;
+
+  const F = Math.min(16, span * RI * 0.3);   // fillet length along each side
+  const dA = F / RI;                          // equivalent angle on the arc
+  const i0 = pt(a0, RI), i1 = pt(a1, RI);             // sharp corners (bezier controls)
+  const s0 = pt(a0, RI + F), s1 = pt(a1, RI + F);     // where straight sides end
+  const e0 = pt(a0 + dA, RI), e1 = pt(a1 - dA, RI);   // where the arc begins/ends
+  const large = (span - 2 * dA) > Math.PI ? 1 : 0;
+  return 'M ' + outer.map(fmt).join(' L ') +
+         ` L ${fmt(s1)} Q ${fmt(i1)} ${fmt(e1)}` +
+         ` A ${RI} ${RI} 0 ${large} 0 ${fmt(e0)}` +
+         ` Q ${fmt(i0)} ${fmt(s0)} Z`;
 }
 
-// word-wrap a label to fit the wedge's chord width at the label radius
-function wrapLabel(text, maxChars, maxLines = 3) {
+// word-wrap a label — never truncates; caller shrinks font until it fits
+function wrapLabel(text, maxChars) {
   const words = text.split(/\s+/);
   const lines = [];
   let cur = '';
@@ -58,32 +69,20 @@ function wrapLabel(text, maxChars, maxLines = 3) {
     cur = w;
   }
   if (cur) lines.push(cur);
-  while (lines.length > maxLines) {
-    const last = lines.pop();
-    const prev = lines.pop() || '';
-    lines.push(`${(prev + ' ' + last).trim().slice(0, maxChars - 1)}…`);
-  }
-  return lines.map((l) => (l.length > maxChars ? `${l.slice(0, maxChars - 1)}…` : l));
+  return lines;
 }
 
-// word-wrap a label to fit the wedge's chord width at the label radius
-function wrapLabel(text, maxChars, maxLines = 3) {
-  const words = text.split(/\s+/);
-  const lines = [];
-  let cur = '';
-  for (const w of words) {
-    const next = cur ? `${cur} ${w}` : w;
-    if (next.length <= maxChars) { cur = next; continue; }
-    if (cur) lines.push(cur);
-    cur = w;
+// pick a font size whose wrapped label fits in maxLines lines
+function fitLabel(text, segLen, baseSize, maxLines = 3) {
+  let fontSize = baseSize;
+  let lines = [];
+  while (fontSize >= 8) {
+    const maxChars = Math.max(5, Math.floor((segLen - 26) / (fontSize * 0.6)));
+    lines = wrapLabel(text, maxChars);
+    if (lines.length <= maxLines) break;
+    fontSize -= 0.5;
   }
-  if (cur) lines.push(cur);
-  while (lines.length > maxLines) {
-    const last = lines.pop();
-    const prev = lines.pop() || '';
-    lines.push(`${(prev + ' ' + last).trim().slice(0, maxChars - 1)}…`);
-  }
-  return lines.map((l) => (l.length > maxChars ? `${l.slice(0, maxChars - 1)}…` : l));
+  return { fontSize, lines };
 }
 
 function render() {
@@ -105,15 +104,12 @@ function render() {
   }
 
   const n = items.length;
-  const gap = n > 8 ? 0.006 : 0.012;   // perimeter-fraction gap between cells
   const segLen = (8 * SO) / n;         // cell width along the perimeter (px)
-  const fontSize = n > 12 ? 10.5 : n > 8 ? 12 : 14;
-  const maxChars = Math.max(6, Math.floor((segLen - 34) / (fontSize * 0.6)));
+  const baseSize = n > 12 ? 10.5 : n > 8 ? 12 : 14;
   items.forEach((pick, i) => {
     const t0 = i / n, t1 = (i + 1) / n;
-    const g = Math.min(gap, (t1 - t0) * 0.2);
     const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    p.setAttribute('d', cellPath(t0 + g / 2, t1 - g / 2));
+    p.setAttribute('d', cellPath(t0, t1));   // no gaps — shared borders
     p.setAttribute('class', 'wedge');
     svg.appendChild(p);
 
@@ -121,9 +117,10 @@ function render() {
     const [ox, oy] = squarePoint(mid, SO);
     const am = Math.atan2(oy - CY, ox - CX);
     const lx = (ox + CX + RI * Math.cos(am)) / 2, ly = (oy + CY + RI * Math.sin(am)) / 2;
-    const lines = wrapLabel(pick.label, maxChars);
-    const lineH = fontSize + 4;
-    const y0 = ly - ((lines.length - 1) * lineH) / 2;
+    const { fontSize, lines } = fitLabel(pick.label, segLen, baseSize);
+    const lineH = fontSize + 3;
+    const subH = pick.sub ? 12 : 0;   // reserve room so label+sub centers as a block
+    const y0 = ly - ((lines.length - 1) * lineH + subH) / 2;
     lines.forEach((ln, k) => {
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       t.setAttribute('x', lx); t.setAttribute('y', y0 + k * lineH);
@@ -135,10 +132,10 @@ function render() {
     });
     if (pick.sub) {
       const s = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      s.setAttribute('x', lx); s.setAttribute('y', ly + (lines.length * lineH) / 2 + 8);
+      s.setAttribute('x', lx); s.setAttribute('y', y0 + lines.length * lineH);
       s.setAttribute('class', 'wedge-sub');
       s.setAttribute('dominant-baseline', 'middle');
-      s.textContent = pick.sub.length > maxChars ? `${pick.sub.slice(0, maxChars - 1)}…` : pick.sub;
+      s.textContent = pick.sub;   // never truncated
       svg.appendChild(s);
     }
 
@@ -158,6 +155,16 @@ function render() {
 function setHot(i) {
   hotIndex = i;
   wedges.forEach((w, j) => w.pathEl.classList.toggle('hot', j === i));
+  if (data && i >= 0 && wedges[i]) {
+    const pick = wedges[i].pick;
+    hubName.textContent = pick.label.replace(/^→\s*/, '');
+    hubName.style.fontSize = '13px';
+    hubCount.textContent = pick.sub || (pick.needsInput ? 'asks for options' : '');
+  } else if (data) {
+    hubName.textContent = WHEEL_NAMES[active];
+    hubName.style.fontSize = '';
+    hubCount.textContent = `${data.files.length} file${data.files.length > 1 ? 's' : ''}`;
+  }
 }
 
 // pick cell at local coords (for dropat during global drag)

@@ -258,10 +258,17 @@ DispatchQueue.global().async {
     }
 }
 
-// report space fullscreen state on every space switch
+// report space fullscreen state on every space switch, plus a poll as
+// fallback (workspace notifications aren't guaranteed in a CLI process)
+var lastFullscreen: Bool? = nil
+func emitSpaceIfChanged() {
+    let fs = activeSpaceIsFullscreen()
+    if fs != lastFullscreen { lastFullscreen = fs; emitSpace() }
+}
 NSWorkspace.shared.notificationCenter.addObserver(
     forName: NSWorkspace.activeSpaceDidChangeNotification,
-    object: nil, queue: .main) { _ in emitSpace() }
+    object: nil, queue: .main) { _ in emitSpaceIfChanged() }
+Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in emitSpaceIfChanged() }
 
 emit(["event": "ready", "inputMonitoring": granted,
       "fullscreen": activeSpaceIsFullscreen()])

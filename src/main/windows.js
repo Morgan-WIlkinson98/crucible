@@ -9,9 +9,17 @@ const IS_MAC = process.platform === 'darwin';
 
 let orbWin = null;
 let wheelWin = null;
-let orbHiddenByWheel = false;
-let orbHiddenBySpace = false;
 let spaceFullscreen = false;
+
+// Single source of truth: orb is visible iff it exists, the space isn't
+// fullscreen, and the wheel isn't open. Idempotent — safe to call anywhere.
+function updateOrb() {
+  if (!orbWin || orbWin.isDestroyed()) return;
+  const wheelOpen = wheelWin && !wheelWin.isDestroyed() && wheelWin.isVisible();
+  const want = !spaceFullscreen && !wheelOpen;
+  if (want && !orbWin.isVisible()) orbWin.showInactive();
+  else if (!want && orbWin.isVisible()) orbWin.hide();
+}
 let settingsWin = null;
 let printWin = null;
 const floatWins = new Set();
@@ -39,6 +47,7 @@ function createOrb(pos) {
   orbWin.setMenu(null);
   orbWin.loadFile(R('orb/orb.html'));
   orbWin.on('closed', () => { orbWin = null; });
+  updateOrb();  // don't surface onto a fullscreen space if we launched in one
   return orbWin;
 }
 
@@ -74,10 +83,7 @@ function showWheelAt(point, payload, { focus = true } = {}) {
   w.setBounds({ x, y, width: size, height: size });
   w.setAlwaysOnTop(true, 'screen-saver');
   w.showInactive(); // don't steal focus mid-drag
-  if (orbWin && !orbWin.isDestroyed() && orbWin.isVisible()) {
-    orbWin.hide();
-    orbHiddenByWheel = true;
-  }
+  updateOrb();    // orb stays hidden while the wheel is open
   if (focus && !w.isFocused()) w.focus();
   if (w.webContents.isLoading()) {
     w.webContents.once('did-finish-load', () => w.webContents.send('wheel:data', payload));
@@ -89,23 +95,14 @@ function showWheelAt(point, payload, { focus = true } = {}) {
 
 function hideWheel() {
   if (wheelWin && !wheelWin.isDestroyed()) wheelWin.hide();
-  if (orbHiddenByWheel && orbWin && !orbWin.isDestroyed() && !spaceFullscreen) {
-    orbWin.showInactive();
-    orbHiddenByWheel = false;
-  }
+  updateOrb();
 }
 
 // Agent reports when the active macOS space is a fullscreen app — the orb
 // must never appear there. Hide on entry, restore on exit.
 function setSpaceFullscreen(fs) {
   spaceFullscreen = fs;
-  if (!orbWin || orbWin.isDestroyed()) return;
-  if (fs) {
-    if (orbWin.isVisible()) { orbWin.hide(); orbHiddenBySpace = true; }
-  } else if (orbHiddenBySpace) {
-    orbWin.showInactive();
-    orbHiddenBySpace = false;
-  }
+  updateOrb();
 }
 
 function sendToWheel(channel, data) {

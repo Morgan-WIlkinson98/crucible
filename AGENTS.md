@@ -3,7 +3,7 @@
 ## Documentation sync (required)
 
 Any change to code, config, build behavior, or the supported-format
-matrix MUST update the docs in the **same PR** so they always match the
+matrix MUST update the docs in the **same change** so they always match the
 real state:
 
 - `README.md` — feature summary, install steps, platform table
@@ -21,19 +21,27 @@ build steps. If you notice stale docs while working, fix them.
 
 See `CONTRIBUTING.md`. In short:
 
-- `git fetch --all --prune` first; base everything off latest `main`.
+- `git fetch --all --prune` first; base everything off latest `dev`.
 - Every feature starts from a **GitHub issue** — create it first, link
-  it in the PR (`Closes #N`).
-- Feature branches named `feature/<short-description-or-issue>` — never
-  commit directly to `main`.
-- Open a **draft PR** early; the description must stand alone (Summary /
-  Why / Approach / How to test / Review focus / Checklist — drop items
-  that genuinely don't apply).
+  it in the changelog entry and the release PR (`Closes #N`).
+- Feature branches named `feature/<short-description-or-issue>`, cut
+  from `dev` — never commit directly to `main`.
+- Every change adds one Pending entry under `changelog/unreleased/`.
+- Feature branches merge into `dev` **without a PR**, after the user
+  approves the merge.
+- Releases: cut `release/<yyyy-mm-dd>` from `dev`, bump the version and
+  compile the changelog there, and open the release PR to `main` — the
+  **only PR** in the workflow. Its description must stand alone
+  (Summary / Why / Approach / How to test / Review focus / Checklist —
+  drop items that genuinely don't apply).
 - **Never merge to `main`** without the user's explicit instruction.
-  Open the PR, hand it over, stop.
-- After a merge, delete the local feature branch.
-- Releases: bump `package.json` version on `main`, tag `v*` — CI builds
-  the `.dmg` (arm64+x64) and `.exe` and publishes the GitHub Release.
+  Open the release PR, hand it over, stop.
+- After the user merges the release PR: tag the squash commit on `main`
+  `v<version>` and push the tag (CI builds the `.dmg` (arm64+x64) and
+  `.exe` and publishes the GitHub Release), then merge the release
+  branch into `dev`, then `main` into `dev`, and push `dev`. Full steps
+  in `docs/DEPLOYMENT-CHECKLIST.md`.
+- After a merge into `dev`, delete the local feature branch.
 
 ## Agent operating rules
 

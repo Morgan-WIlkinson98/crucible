@@ -2,7 +2,7 @@
 
 - **Status:** Pending
 - **Type:** Change
-- **Issue:** _added once the issue is created_
+- **Issue:** [#26](https://github.com/Morgan-WIlkinson98/crucible/issues/26)
 - **Branch:** `feature/adopt-standards`
 
 ## What changed

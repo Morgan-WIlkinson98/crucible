@@ -3,7 +3,7 @@
 ## Documentation sync (required)
 
 Any change to code, config, build behavior, or the supported-format
-matrix MUST update the docs in the **same change** so they always match the
+matrix MUST update the docs in the **same PR** so they always match the
 real state:
 
 - `README.md` — feature summary, install steps, platform table
@@ -21,27 +21,32 @@ build steps. If you notice stale docs while working, fix them.
 
 See `CONTRIBUTING.md`. In short:
 
-- `git fetch --all --prune` first; base everything off latest `dev`.
+- `git fetch --all --prune` first; base everything off latest `main`.
 - Every feature starts from a **GitHub issue** — create it first, link
-  it in the changelog entry and the release PR (`Closes #N`).
-- Feature branches named `feature/<short-description-or-issue>`, cut
-  from `dev` — never commit directly to `main`.
+  it in the PR (`Closes #N`).
+- Feature branches named `feature/<short-description-or-issue>` — never
+  commit directly to `main` or `dev`.
 - Every change adds one Pending entry under `changelog/unreleased/`.
-- Feature branches merge into `dev` **without a PR**, after the user
-  approves the merge.
-- Releases: cut `release/<yyyy-mm-dd>` from `dev`, bump the version and
-  compile the changelog there, and open the release PR to `main` — the
-  **only PR** in the workflow. Its description must stand alone
-  (Summary / Why / Approach / How to test / Review focus / Checklist —
-  drop items that genuinely don't apply).
+- `dev` is a **testing branch only**: merge a feature branch into it
+  without a PR to test, after the user approves. Never merge `dev` into
+  `main`, never branch from it, never reset it unless the user says so.
+- Ship a single feature by PR from its feature branch to `main`, or
+  several via `release/<yyyy-mm-dd>` cut from `main` with the chosen
+  features merged in. Compile the changelog on the shipped branch right
+  before its PR (or before marking a draft ready).
+- Open a **draft PR** early; the description must stand alone (Summary /
+  Why / Approach / How to test / Review focus / Checklist — drop items
+  that genuinely don't apply).
 - **Never merge to `main`** without the user's explicit instruction.
-  Open the release PR, hand it over, stop.
-- After the user merges the release PR: tag the squash commit on `main`
-  `v<version>` and push the tag (CI builds the `.dmg` (arm64+x64) and
-  `.exe` and publishes the GitHub Release), then merge the release
-  branch into `dev`, then `main` into `dev`, and push `dev`. Full steps
-  in `docs/DEPLOYMENT-CHECKLIST.md`.
-- After a merge into `dev`, delete the local feature branch.
+  Open the PR, hand it over, stop.
+- After a merge, merge the shipped branch into `dev`, then `main` into
+  `dev`; then ask before deleting the local shipped branch.
+- Releases: bump the `package.json` version on the branch being
+  shipped; after its PR merges, tag the squash commit on `main`
+  `v<version>` and push the tag (tags are immutable — confirm the commit
+  and version first) — CI builds the `.dmg` (arm64+x64) and `.exe` and
+  publishes the GitHub Release. Full steps in
+  `docs/DEPLOYMENT-CHECKLIST.md`.
 
 ## Agent operating rules
 

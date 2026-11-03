@@ -25,15 +25,28 @@ See `CONTRIBUTING.md`. In short:
 - Every feature starts from a **GitHub issue** — create it first, link
   it in the PR (`Closes #N`).
 - Feature branches named `feature/<short-description-or-issue>` — never
-  commit directly to `main`.
+  commit directly to `main` or `dev`.
+- Every change adds one Pending entry under `changelog/unreleased/`.
+- `dev` is a **testing branch only**: merge a feature branch into it
+  without a PR to test, after the user approves. Never merge `dev` into
+  `main`, never branch from it, never reset it unless the user says so.
+- Ship a single feature by PR from its feature branch to `main`, or
+  several via `release/<yyyy-mm-dd>` cut from `main` with the chosen
+  features merged in. Compile the changelog on the shipped branch right
+  before its PR (or before marking a draft ready).
 - Open a **draft PR** early; the description must stand alone (Summary /
   Why / Approach / How to test / Review focus / Checklist — drop items
   that genuinely don't apply).
 - **Never merge to `main`** without the user's explicit instruction.
   Open the PR, hand it over, stop.
-- After a merge, delete the local feature branch.
-- Releases: bump `package.json` version on `main`, tag `v*` — CI builds
-  the `.dmg` (arm64+x64) and `.exe` and publishes the GitHub Release.
+- After a merge, merge the shipped branch into `dev`, then `main` into
+  `dev`; then ask before deleting the local shipped branch.
+- Releases: bump the `package.json` version on the branch being
+  shipped; after its PR merges, tag the squash commit on `main`
+  `v<version>` and push the tag (tags are immutable — confirm the commit
+  and version first) — CI builds the `.dmg` (arm64+x64) and `.exe` and
+  publishes the GitHub Release. Full steps in
+  `docs/DEPLOYMENT-CHECKLIST.md`.
 
 ## Agent operating rules
 
